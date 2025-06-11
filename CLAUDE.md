@@ -24,6 +24,7 @@ npm run lint
 - Node.js version 18.18.0+ is required (current version may show warnings)
 - Uses Next.js App Router with TypeScript
 - Tailwind CSS for styling
+- Para ejecutar node puedes setear la version 21 asi `nvm use 21`
 
 ## Project Structure
 
