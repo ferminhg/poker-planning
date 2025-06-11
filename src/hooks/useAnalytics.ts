@@ -28,7 +28,7 @@ interface AnalyticsEvents {
   votes_revealed: {
     room_id: string;
     participant_count: number;
-    vote_values: string[];
+    vote_values: string;
   };
   votes_reset: {
     room_id: string;
@@ -111,7 +111,7 @@ export function useAnalytics() {
     trackEvent('votes_revealed', { 
       room_id: roomId, 
       participant_count: participantCount, 
-      vote_values: voteValues 
+      vote_values: voteValues.join(',') 
     });
   };
 
