@@ -72,6 +72,27 @@ export default function RoomPage({ params }: { params: Promise<{ id: string }> }
     setLastAllVotedState(allVoted);
   }, [allVoted, lastAllVotedState, roomState?.votesRevealed, roomState?.participants?.length]);
 
+  // Detect when votes are reset by another user (new round or reset votes)
+  useEffect(() => {
+    if (roomState && currentUser) {
+      const currentUserParticipant = roomState.participants.find(p => p.id === currentUser.id);
+      
+      // If votes were revealed before but now they're not, it means a new round started
+      if (lastVotesRevealed && !roomState.votesRevealed) {
+        setResetVotingDeck(true);
+        setTimeout(() => setResetVotingDeck(false), 100);
+      }
+      
+      // If user had voted before but now hasVoted is false, votes were reset
+      if (currentUserParticipant && !currentUserParticipant.hasVoted && !roomState.votesRevealed) {
+        setResetVotingDeck(true);
+        setTimeout(() => setResetVotingDeck(false), 100);
+      }
+      
+      setLastVotesRevealed(roomState.votesRevealed);
+    }
+  }, [roomState, currentUser, lastVotesRevealed]);
+
   const handleSaveName = async () => {
     if (tempName.trim()) {
       try {
