@@ -21,6 +21,8 @@ export default function RoomPage({ params }: { params: Promise<{ id: string }> }
   const [showShareModal, setShowShareModal] = useState<boolean>(false);
   const [showCountdown, setShowCountdown] = useState<boolean>(false);
   const [lastAllVotedState, setLastAllVotedState] = useState<boolean>(false);
+  const [resetVotingDeck, setResetVotingDeck] = useState<boolean>(false);
+  const [lastVotesRevealed, setLastVotesRevealed] = useState<boolean>(false);
   
   const { trackUserNameChanged } = useAnalytics();
 
@@ -64,11 +66,11 @@ export default function RoomPage({ params }: { params: Promise<{ id: string }> }
 
   // Auto-trigger countdown when all participants have voted
   useEffect(() => {
-    if (allVoted && !lastAllVotedState && !roomState?.votesRevealed && roomState?.participants.length > 0) {
+    if (allVoted && !lastAllVotedState && !roomState?.votesRevealed && (roomState?.participants?.length || 0) > 0) {
       setShowCountdown(true);
     }
     setLastAllVotedState(allVoted);
-  }, [allVoted, lastAllVotedState, roomState?.votesRevealed, roomState?.participants.length]);
+  }, [allVoted, lastAllVotedState, roomState?.votesRevealed, roomState?.participants?.length]);
 
   const handleSaveName = async () => {
     if (tempName.trim()) {
@@ -121,6 +123,18 @@ export default function RoomPage({ params }: { params: Promise<{ id: string }> }
   const handleCountdownComplete = () => {
     setShowCountdown(false);
     revealVotes();
+  };
+
+  const handleNewRound = async () => {
+    await newRound();
+    setResetVotingDeck(true);
+    setTimeout(() => setResetVotingDeck(false), 100); // Reset the flag after a brief delay
+  };
+
+  const handleResetVotes = async () => {
+    await resetVotes();
+    setResetVotingDeck(true);
+    setTimeout(() => setResetVotingDeck(false), 100); // Reset the flag after a brief delay
   };
 
   // Show loading state
@@ -208,14 +222,15 @@ export default function RoomPage({ params }: { params: Promise<{ id: string }> }
 
         <VotingDeck 
           onVote={vote} 
-          disabled={roomState?.votesRevealed || false} 
+          disabled={roomState?.votesRevealed || false}
+          resetSelection={resetVotingDeck}
         />
 
         <VotingControls
           votesRevealed={roomState?.votesRevealed || false}
           hasAnyVotes={roomState?.participants.some(p => p.hasVoted) || false}
-          onNewRound={newRound}
-          onResetVotes={resetVotes}
+          onNewRound={handleNewRound}
+          onResetVotes={handleResetVotes}
         />
 
       </div>

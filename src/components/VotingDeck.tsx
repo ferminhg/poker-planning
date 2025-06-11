@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import VotingCard from './VotingCard';
 
 const FIBONACCI_VALUES = ['0', '1', '2', '3', '5', '8', '13', '21', '34', '55', '?', '☕'];
@@ -8,10 +8,18 @@ const FIBONACCI_VALUES = ['0', '1', '2', '3', '5', '8', '13', '21', '34', '55', 
 interface VotingDeckProps {
   onVote?: (value: string) => void;
   disabled?: boolean;
+  resetSelection?: boolean;
 }
 
-export default function VotingDeck({ onVote, disabled }: VotingDeckProps) {
+export default function VotingDeck({ onVote, disabled, resetSelection }: VotingDeckProps) {
   const [selectedValue, setSelectedValue] = useState<string | null>(null);
+
+  // Reset selection when resetSelection prop changes
+  useEffect(() => {
+    if (resetSelection) {
+      setSelectedValue(null);
+    }
+  }, [resetSelection]);
 
   const handleCardClick = (value: string) => {
     if (disabled) return;
