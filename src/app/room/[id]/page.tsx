@@ -56,7 +56,7 @@ export default function RoomPage({ params }: { params: Promise<{ id: string }> }
     setVotesRevealed(true);
     setParticipants(prev => prev.map(p => ({
       ...p,
-      vote: p.hasVoted ? (p.id === '1' ? myVote : ['3', '5', '8'][Math.floor(Math.random() * 3)]) : undefined
+      vote: p.hasVoted ? (p.id === '1' ? myVote || undefined : ['3', '5', '8'][Math.floor(Math.random() * 3)]) : undefined
     })));
   };
 
