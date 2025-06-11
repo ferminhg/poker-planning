@@ -33,7 +33,6 @@ export default function RoomPage({ params }: { params: Promise<{ id: string }> }
     isLoading,
     error,
     joinRoom,
-    leaveRoom,
     vote,
     revealVotes,
     newRound,
