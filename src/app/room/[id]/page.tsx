@@ -13,6 +13,7 @@ import ShareRoom from '@/components/ShareRoom';
 import CountdownModal from '@/components/CountdownModal';
 import { useRoomSync } from '@/hooks/useRoomSync';
 import { useAnalytics } from '@/hooks/useAnalytics';
+import Confetti from 'react-confetti';
 
 export default function RoomPage({ params }: { params: Promise<{ id: string }> }) {
   const [roomId, setRoomId] = useState<string>('');
@@ -24,6 +25,8 @@ export default function RoomPage({ params }: { params: Promise<{ id: string }> }
   const [resetVotingDeck, setResetVotingDeck] = useState<boolean>(false);
   const [lastVotesRevealed, setLastVotesRevealed] = useState<boolean>(false);
   const [lastUserHasVoted, setLastUserHasVoted] = useState<boolean>(false);
+  const [showConfetti, setShowConfetti] = useState<boolean>(false);
+  const [windowDimensions, setWindowDimensions] = useState({ width: 0, height: 0 });
   
   const { trackUserNameChanged } = useAnalytics();
 
@@ -32,6 +35,21 @@ export default function RoomPage({ params }: { params: Promise<{ id: string }> }
       setRoomId(resolvedParams.id);
     });
   }, [params]);
+
+  // Set window dimensions for confetti
+  useEffect(() => {
+    const updateWindowDimensions = () => {
+      setWindowDimensions({
+        width: window.innerWidth,
+        height: window.innerHeight,
+      });
+    };
+
+    updateWindowDimensions();
+    window.addEventListener('resize', updateWindowDimensions);
+
+    return () => window.removeEventListener('resize', updateWindowDimensions);
+  }, []);
 
   const {
     roomState,
@@ -96,6 +114,20 @@ export default function RoomPage({ params }: { params: Promise<{ id: string }> }
       setLastUserHasVoted(currentUserHasVoted);
     }
   }, [roomState, currentUser, lastVotesRevealed, lastUserHasVoted]);
+
+  // Check for unanimous votes and trigger confetti
+  useEffect(() => {
+    if (roomState && roomState.votesRevealed && !lastVotesRevealed) {
+      const validVotes = roomState.participants
+        .filter(p => p.vote && p.vote !== '?' && p.vote !== '☕')
+        .map(p => p.vote);
+      
+      if (validVotes.length >= 2 && new Set(validVotes).size === 1) {
+        setShowConfetti(true);
+        setTimeout(() => setShowConfetti(false), 5000); // Show confetti for 5 seconds
+      }
+    }
+  }, [roomState?.votesRevealed, lastVotesRevealed, roomState?.participants]);
 
   const handleSaveName = async () => {
     if (tempName.trim()) {
@@ -279,6 +311,16 @@ export default function RoomPage({ params }: { params: Promise<{ id: string }> }
         isOpen={showCountdown}
         onComplete={handleCountdownComplete}
       />
+
+      {showConfetti && (
+        <Confetti
+          width={windowDimensions.width}
+          height={windowDimensions.height}
+          recycle={false}
+          numberOfPieces={200}
+          gravity={0.3}
+        />
+      )}
     </Layout>
   );
 }
