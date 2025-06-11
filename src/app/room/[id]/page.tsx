@@ -10,6 +10,7 @@ import VotingControls from '@/components/VotingControls';
 import NameModal from '@/components/NameModal';
 import RoomFullMessage from '@/components/RoomFullMessage';
 import ShareRoom from '@/components/ShareRoom';
+import CountdownModal from '@/components/CountdownModal';
 import { useRoomSync } from '@/hooks/useRoomSync';
 import { useAnalytics } from '@/hooks/useAnalytics';
 
@@ -18,6 +19,8 @@ export default function RoomPage({ params }: { params: Promise<{ id: string }> }
   const [showNameModal, setShowNameModal] = useState<boolean>(false);
   const [tempName, setTempName] = useState<string>('');
   const [showShareModal, setShowShareModal] = useState<boolean>(false);
+  const [showCountdown, setShowCountdown] = useState<boolean>(false);
+  const [lastAllVotedState, setLastAllVotedState] = useState<boolean>(false);
   
   const { trackUserNameChanged } = useAnalytics();
 
@@ -58,6 +61,14 @@ export default function RoomPage({ params }: { params: Promise<{ id: string }> }
       setShowNameModal(true);
     }
   }, [roomId, currentUser, isRoomFull, isLoading, joinRoom]);
+
+  // Auto-trigger countdown when all participants have voted
+  useEffect(() => {
+    if (allVoted && !lastAllVotedState && !roomState?.votesRevealed && roomState?.participants.length > 0) {
+      setShowCountdown(true);
+    }
+    setLastAllVotedState(allVoted);
+  }, [allVoted, lastAllVotedState, roomState?.votesRevealed, roomState?.participants.length]);
 
   const handleSaveName = async () => {
     if (tempName.trim()) {
@@ -101,6 +112,15 @@ export default function RoomPage({ params }: { params: Promise<{ id: string }> }
 
   const handleCloseShare = () => {
     setShowShareModal(false);
+  };
+
+  const handleRevealVotes = () => {
+    setShowCountdown(true);
+  };
+
+  const handleCountdownComplete = () => {
+    setShowCountdown(false);
+    revealVotes();
   };
 
   // Show loading state
@@ -182,6 +202,8 @@ export default function RoomPage({ params }: { params: Promise<{ id: string }> }
           votesRevealed={roomState?.votesRevealed || false}
           currentUserId={currentUser?.id}
           onSendEmoji={sendEmoji}
+          allVoted={allVoted}
+          onRevealVotes={handleRevealVotes}
         />
 
         <VotingDeck 
@@ -190,10 +212,8 @@ export default function RoomPage({ params }: { params: Promise<{ id: string }> }
         />
 
         <VotingControls
-          allVoted={allVoted}
           votesRevealed={roomState?.votesRevealed || false}
           hasAnyVotes={roomState?.participants.some(p => p.hasVoted) || false}
-          onRevealVotes={revealVotes}
           onNewRound={newRound}
           onResetVotes={resetVotes}
         />
@@ -213,6 +233,11 @@ export default function RoomPage({ params }: { params: Promise<{ id: string }> }
         roomId={roomId}
         isOpen={showShareModal}
         onClose={handleCloseShare}
+      />
+
+      <CountdownModal
+        isOpen={showCountdown}
+        onComplete={handleCountdownComplete}
       />
     </Layout>
   );
