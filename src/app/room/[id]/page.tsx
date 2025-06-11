@@ -25,7 +25,7 @@ export default function RoomPage({ params }: { params: Promise<{ id: string }> }
     { id: '4', name: 'Charlie', hasVoted: true },
   ]);
   
-  const [currentStory, setCurrentStory] = useState('User can login with email and password');
+  const [currentStory, setCurrentStory] = useState('');
   const [votesRevealed, setVotesRevealed] = useState(false);
   const [myVote, setMyVote] = useState<string | null>(null);
 
@@ -63,7 +63,13 @@ export default function RoomPage({ params }: { params: Promise<{ id: string }> }
         <div className="max-w-4xl mx-auto space-y-6">
           <div className="bg-white rounded-lg shadow-lg p-6">
             <h2 className="text-lg font-semibold text-gray-800 mb-2">Current Story</h2>
-            <p className="text-gray-600 bg-gray-50 p-4 rounded-lg">{currentStory}</p>
+            <input
+              type="text"
+              value={currentStory}
+              onChange={(e) => setCurrentStory(e.target.value)}
+              placeholder="e.g. GRY-1234"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
           </div>
 
           <div className="bg-white rounded-lg shadow-lg p-6">
