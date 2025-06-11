@@ -19,30 +19,30 @@ export default function RoomCard() {
   };
 
   return (
-    <div className="max-w-md mx-auto bg-white rounded-lg shadow-lg p-6">
+    <div className="max-w-md mx-auto bg-white border border-gray-200 rounded-lg p-6">
       <div className="mb-6">
         <button 
           onClick={createRoom}
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
+          className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2.5 px-4 rounded-md transition-colors border border-transparent"
         >
           Create New Room
         </button>
       </div>
       
-      <div className="text-center text-gray-500 mb-4">or</div>
+      <div className="text-center text-gray-500 text-sm mb-4">or</div>
       
-      <div className="space-y-4">
+      <div className="space-y-3">
         <input
           type="text"
           placeholder="Enter room code"
           value={roomCode}
           onChange={(e) => setRoomCode(e.target.value)}
           onKeyPress={(e) => e.key === 'Enter' && joinRoom()}
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
         />
         <button 
           onClick={joinRoom}
-          className="w-full bg-gray-600 hover:bg-gray-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
+          className="w-full bg-gray-800 hover:bg-gray-900 text-white font-medium py-2.5 px-4 rounded-md transition-colors"
         >
           Join Room
         </button>

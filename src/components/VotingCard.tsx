@@ -11,10 +11,10 @@ export default function VotingCard({ value, isSelected, onClick, disabled }: Vot
       onClick={onClick}
       disabled={disabled}
       className={`
-        w-16 h-24 rounded-lg border-2 font-semibold text-lg transition-all duration-200
+        w-16 h-20 rounded-md border font-medium text-base transition-all duration-200
         ${isSelected 
-          ? 'border-blue-500 bg-blue-100 text-blue-700 shadow-md' 
-          : 'border-gray-300 bg-white text-gray-700 hover:border-blue-300 hover:shadow-sm'
+          ? 'border-blue-600 bg-blue-600 text-white shadow-sm' 
+          : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400 hover:bg-gray-50'
         }
         ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
       `}
