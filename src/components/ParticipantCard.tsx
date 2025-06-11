@@ -4,13 +4,14 @@ import { Participant } from '@/types';
 interface ParticipantCardProps {
   participant: Participant;
   votesRevealed: boolean;
-  onSendEmoji?: (targetUserId: string, emoji: string) => void;
+  onSendEmoji?: (targetUserId: string, emoji: string, targetElement?: HTMLElement) => void;
   currentUserId?: string;
 }
 
 export default function ParticipantCard({ participant, votesRevealed, onSendEmoji, currentUserId }: ParticipantCardProps) {
   const [showEmojiTooltip, setShowEmojiTooltip] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const nameRef = useRef<HTMLDivElement>(null);
 
   const handleContainerMouseEnter = () => {
     // Don't show tooltip for current user
@@ -23,8 +24,8 @@ export default function ParticipantCard({ participant, votesRevealed, onSendEmoj
   };
 
   const handleEmojiSelect = (emoji: string) => {
-    if (onSendEmoji) {
-      onSendEmoji(participant.id, emoji);
+    if (onSendEmoji && nameRef.current) {
+      onSendEmoji(participant.id, emoji, nameRef.current);
     }
     setShowEmojiTooltip(false);
   };
@@ -68,7 +69,7 @@ export default function ParticipantCard({ participant, votesRevealed, onSendEmoj
             : 'border-gray-200 bg-gray-50'
         } ${canShowEmoji ? 'cursor-pointer hover:border-blue-300 hover:bg-blue-50' : ''}`}
       >
-        <div className="font-medium text-gray-900 text-sm truncate">{participant.name}</div>
+        <div ref={nameRef} className="font-medium text-gray-900 text-sm truncate">{participant.name}</div>
         <div className="mt-2">
           {votesRevealed && participant.vote ? (
             <div className="inline-block bg-blue-600 text-white px-2 py-1 rounded text-sm font-medium">
@@ -81,13 +82,13 @@ export default function ParticipantCard({ participant, votesRevealed, onSendEmoj
           )}
         </div>
         
-        {/* Received emojis display */}
+        {/* Received emojis display - positioned absolutely to not affect layout */}
         {participant.receivedEmojis && participant.receivedEmojis.length > 0 && (
-          <div className="mt-1 flex justify-center space-x-1">
+          <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 flex space-x-1 z-10">
             {participant.receivedEmojis.slice(-3).map((emojiData, index) => {
               const emoji = typeof emojiData === 'string' ? emojiData : emojiData.emoji;
               return (
-                <span key={index} className="text-sm animate-bounce">
+                <span key={index} className="text-sm animate-bounce bg-white rounded-full px-1 shadow-sm">
                   {emoji}
                 </span>
               );

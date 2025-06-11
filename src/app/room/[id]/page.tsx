@@ -11,8 +11,10 @@ import NameModal from '@/components/NameModal';
 import RoomFullMessage from '@/components/RoomFullMessage';
 import ShareRoom from '@/components/ShareRoom';
 import CountdownModal from '@/components/CountdownModal';
+import EmojiThrow from '@/components/EmojiThrow';
 import { useRoomSync } from '@/hooks/useRoomSync';
 import { useAnalytics } from '@/hooks/useAnalytics';
+import { useEmojiAnimations } from '@/hooks/useEmojiAnimations';
 import Confetti from 'react-confetti';
 
 export default function RoomPage({ params }: { params: Promise<{ id: string }> }) {
@@ -29,6 +31,7 @@ export default function RoomPage({ params }: { params: Promise<{ id: string }> }
   const [windowDimensions, setWindowDimensions] = useState({ width: 0, height: 0 });
   
   const { trackUserNameChanged } = useAnalytics();
+  const { currentAnimation, throwEmoji, clearAnimation } = useEmojiAnimations();
 
   useEffect(() => {
     params.then((resolvedParams) => {
@@ -194,6 +197,16 @@ export default function RoomPage({ params }: { params: Promise<{ id: string }> }
     setTimeout(() => setResetVotingDeck(false), 100); // Reset the flag after a brief delay
   };
 
+  const handleSendEmoji = async (targetUserId: string, emoji: string, targetElement?: HTMLElement) => {
+    // Send emoji to server
+    await sendEmoji(targetUserId, emoji);
+    
+    // Trigger animation if target element is provided
+    if (targetElement) {
+      throwEmoji(emoji, targetElement);
+    }
+  };
+
   // Show loading state
   if (isLoading) {
     return (
@@ -272,7 +285,7 @@ export default function RoomPage({ params }: { params: Promise<{ id: string }> }
           participants={roomState?.participants || []}
           votesRevealed={roomState?.votesRevealed || false}
           currentUserId={currentUser?.id}
-          onSendEmoji={sendEmoji}
+          onSendEmoji={handleSendEmoji}
           allVoted={allVoted}
           onRevealVotes={handleRevealVotes}
         />
@@ -319,6 +332,16 @@ export default function RoomPage({ params }: { params: Promise<{ id: string }> }
           recycle={false}
           numberOfPieces={200}
           gravity={0.3}
+        />
+      )}
+
+      {/* Emoji throw animation */}
+      {currentAnimation && (
+        <EmojiThrow
+          key={currentAnimation.id}
+          emoji={currentAnimation.emoji}
+          targetPosition={currentAnimation.targetPosition}
+          onComplete={clearAnimation}
         />
       )}
     </Layout>

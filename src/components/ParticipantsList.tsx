@@ -5,7 +5,7 @@ interface ParticipantsListProps {
   participants: Participant[];
   votesRevealed: boolean;
   currentUserId?: string;
-  onSendEmoji?: (targetUserId: string, emoji: string) => void;
+  onSendEmoji?: (targetUserId: string, emoji: string, targetElement?: HTMLElement) => void;
   allVoted?: boolean;
   onRevealVotes?: () => void;
 }
@@ -32,7 +32,7 @@ export default function ParticipantsList({ participants, votesRevealed, currentU
         )}
       </div>
       
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pb-8">
         {participants.map((participant) => (
           <ParticipantCard
             key={participant.id}
