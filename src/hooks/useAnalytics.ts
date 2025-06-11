@@ -49,6 +49,13 @@ interface AnalyticsEvents {
   user_name_changed: {
     room_id: string;
   };
+
+  // Emoji events
+  emoji_sent: {
+    room_id: string;
+    emoji: string;
+    participant_count: number;
+  };
 }
 
 export function useAnalytics() {

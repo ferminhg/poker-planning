@@ -39,6 +39,7 @@ export default function RoomPage({ params }: { params: Promise<{ id: string }> }
     newRound,
     updateStory,
     resetVotes,
+    sendEmoji,
     isRoomFull,
     allVoted
   } = useRoomSync(roomId);
@@ -186,6 +187,8 @@ export default function RoomPage({ params }: { params: Promise<{ id: string }> }
         <ParticipantsList 
           participants={roomState?.participants || []}
           votesRevealed={roomState?.votesRevealed || false}
+          currentUserId={currentUser?.id}
+          onSendEmoji={sendEmoji}
         />
 
         <VotingDeck 

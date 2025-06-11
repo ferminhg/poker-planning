@@ -27,6 +27,7 @@ interface UseRoomSyncReturn {
   newRound: () => Promise<void>;
   updateStory: (story: string) => Promise<void>;
   resetVotes: () => Promise<void>;
+  sendEmoji: (targetUserId: string, emoji: string) => Promise<void>;
   isRoomFull: boolean;
   allVoted: boolean;
 }
@@ -293,6 +294,56 @@ export function useRoomSync(roomId: string): UseRoomSyncReturn {
     });
   }, [roomState, updateRoom, analytics, roomId]);
 
+  // Send emoji to participant
+  const sendEmoji = useCallback(async (targetUserId: string, emoji: string) => {
+    if (!roomState) return;
+
+    const emojiWithTimestamp = {
+      emoji,
+      timestamp: Date.now()
+    };
+
+    const newParticipants = roomState.participants.map(p => {
+      if (p.id === targetUserId) {
+        const currentEmojis = p.receivedEmojis || [];
+        return {
+          ...p,
+          receivedEmojis: [...currentEmojis, emojiWithTimestamp]
+        };
+      }
+      return p;
+    });
+
+    await updateRoom({ participants: newParticipants });
+    
+    // Track emoji sent event
+    analytics.trackEvent('emoji_sent', { 
+      room_id: roomId, 
+      emoji: emoji,
+      participant_count: roomState.participants.length 
+    });
+
+    // Auto-remove emoji after 2 seconds
+    setTimeout(async () => {
+      if (!roomState) return;
+      
+      const updatedParticipants = roomState.participants.map(p => {
+        if (p.id === targetUserId) {
+          const filteredEmojis = (p.receivedEmojis || []).filter(
+            e => typeof e === 'string' || (e.timestamp && Date.now() - e.timestamp < 2000)
+          );
+          return {
+            ...p,
+            receivedEmojis: filteredEmojis
+          };
+        }
+        return p;
+      });
+
+      await updateRoom({ participants: updatedParticipants });
+    }, 2000);
+  }, [roomState, updateRoom, analytics, roomId]);
+
   // Generate random vote for demo
   const generateRandomVote = () => {
     const votes = ['1', '2', '3', '5', '8'];
@@ -329,6 +380,7 @@ export function useRoomSync(roomId: string): UseRoomSyncReturn {
     newRound,
     updateStory,
     resetVotes,
+    sendEmoji,
     isRoomFull,
     allVoted
   };
