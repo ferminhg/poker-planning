@@ -1,6 +1,5 @@
 import { useState, useRef } from 'react';
 import { Participant } from '@/types';
-import EmojiTooltip from './EmojiTooltip';
 
 interface ParticipantCardProps {
   participant: Participant;

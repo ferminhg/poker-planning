@@ -1,4 +1,3 @@
-import { useState } from 'react';
 
 interface EmojiTooltipProps {
   onEmojiSelect: (emoji: string) => void;

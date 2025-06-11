@@ -17,7 +17,6 @@ export default function RoomPage({ params }: { params: Promise<{ id: string }> }
   const [roomId, setRoomId] = useState<string>('');
   const [showNameModal, setShowNameModal] = useState<boolean>(false);
   const [tempName, setTempName] = useState<string>('');
-  const [isJoining, setIsJoining] = useState<boolean>(false);
   
   const { trackUserNameChanged } = useAnalytics();
 
@@ -62,7 +61,6 @@ export default function RoomPage({ params }: { params: Promise<{ id: string }> }
 
   const handleSaveName = async () => {
     if (tempName.trim()) {
-      setIsJoining(true);
       try {
         const success = await joinRoom(tempName.trim());
         
@@ -81,8 +79,6 @@ export default function RoomPage({ params }: { params: Promise<{ id: string }> }
       } catch (error) {
         console.error('Error joining room:', error);
         alert('Failed to join room. Please try again.');
-      } finally {
-        setIsJoining(false);
       }
     }
   };

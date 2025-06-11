@@ -13,7 +13,7 @@ async function getKV() {
 }
 
 // Fallback in-memory storage for development
-const memoryStore = new Map<string, any>();
+const memoryStore = new Map<string, unknown>();
 
 interface RoomState {
   id: string;
