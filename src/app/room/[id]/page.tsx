@@ -104,17 +104,6 @@ export default function RoomPage({ params }: { params: Promise<{ id: string }> }
     setShowShareModal(false);
   };
 
-  const handleLeaveRoom = async () => {
-    try {
-      await leaveRoom();
-      window.location.href = '/';
-    } catch (error) {
-      console.error('Error leaving room:', error);
-      // Still redirect even if there's an error
-      window.location.href = '/';
-    }
-  };
-
   // Show loading state
   if (isLoading) {
     return (
