@@ -1,0 +1,48 @@
+'use client';
+
+import { useState } from 'react';
+import VotingCard from './VotingCard';
+
+const FIBONACCI_VALUES = ['0', '1', '2', '3', '5', '8', '13', '21', '34', '55', '?', '☕'];
+
+interface VotingDeckProps {
+  onVote?: (value: string) => void;
+  disabled?: boolean;
+}
+
+export default function VotingDeck({ onVote, disabled }: VotingDeckProps) {
+  const [selectedValue, setSelectedValue] = useState<string | null>(null);
+
+  const handleCardClick = (value: string) => {
+    if (disabled) return;
+    
+    setSelectedValue(value);
+    onVote?.(value);
+  };
+
+  return (
+    <div className="bg-white rounded-lg shadow-lg p-6">
+      <h3 className="text-lg font-semibold text-gray-800 mb-4 text-center">
+        Choose your estimate
+      </h3>
+      
+      <div className="grid grid-cols-6 gap-3 justify-items-center">
+        {FIBONACCI_VALUES.map((value) => (
+          <VotingCard
+            key={value}
+            value={value}
+            isSelected={selectedValue === value}
+            onClick={() => handleCardClick(value)}
+            disabled={disabled}
+          />
+        ))}
+      </div>
+      
+      {selectedValue && (
+        <div className="mt-4 text-center text-gray-600">
+          Selected: <span className="font-semibold text-blue-600">{selectedValue}</span>
+        </div>
+      )}
+    </div>
+  );
+}
