@@ -17,6 +17,7 @@ export default function RoomPage({ params }: { params: Promise<{ id: string }> }
   const [roomId, setRoomId] = useState<string>('');
   const [showNameModal, setShowNameModal] = useState<boolean>(false);
   const [tempName, setTempName] = useState<string>('');
+  const [showShareModal, setShowShareModal] = useState<boolean>(false);
   
   const { trackUserNameChanged } = useAnalytics();
 
@@ -95,6 +96,14 @@ export default function RoomPage({ params }: { params: Promise<{ id: string }> }
     setTempName('');
   };
 
+  const handleOpenShare = () => {
+    setShowShareModal(true);
+  };
+
+  const handleCloseShare = () => {
+    setShowShareModal(false);
+  };
+
   const handleLeaveRoom = async () => {
     try {
       await leaveRoom();
@@ -170,10 +179,10 @@ export default function RoomPage({ params }: { params: Promise<{ id: string }> }
         onChangeName={handleChangeName}
         participantCount={roomState?.participants.length || 0}
         maxParticipants={roomState?.maxParticipants || 4}
+        onShareRoom={handleOpenShare}
       />
 
       <div className="max-w-4xl mx-auto space-y-6">
-        <ShareRoom roomId={roomId} />
         
         <StoryInput 
           value={roomState?.currentStory || ''}
@@ -210,6 +219,12 @@ export default function RoomPage({ params }: { params: Promise<{ id: string }> }
         onTempNameChange={setTempName}
         onSave={handleSaveName}
         onCancel={handleCancelName}
+      />
+
+      <ShareRoom
+        roomId={roomId}
+        isOpen={showShareModal}
+        onClose={handleCloseShare}
       />
     </Layout>
   );
