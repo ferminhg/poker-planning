@@ -1,12 +1,14 @@
-import Header from '@/components/Header';
+import Hero from '@/components/Hero';
+import Features from '@/components/Features';
+import HowItWorks from '@/components/HowItWorks';
 import Layout from '@/components/Layout';
-import RoomCard from '@/components/RoomCard';
 
 export default function Home() {
   return (
     <Layout>
-      <Header />
-      <RoomCard />
+      <Hero />
+      <Features />
+      <HowItWorks />
     </Layout>
   );
 }
