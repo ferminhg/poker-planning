@@ -9,7 +9,6 @@ interface EmojiThrowProps {
 }
 
 export default function EmojiThrow({ emoji, targetPosition, onComplete }: EmojiThrowProps) {
-  const [isAnimating, setIsAnimating] = useState(true);
   const emojiRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -134,7 +133,6 @@ export default function EmojiThrow({ emoji, targetPosition, onComplete }: EmojiT
     };
   }, [targetPosition, onComplete]);
 
-  if (!isAnimating) return null;
 
   return (
     <div className="fixed inset-0 pointer-events-none z-40">
