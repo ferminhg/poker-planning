@@ -30,6 +30,10 @@ interface AnalyticsEvents {
     participant_count: number;
     vote_values: string[];
   };
+  votes_reset: {
+    room_id: string;
+    participant_count: number;
+  };
   new_round_started: {
     room_id: string;
     participant_count: number;

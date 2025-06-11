@@ -26,6 +26,7 @@ interface UseRoomSyncReturn {
   revealVotes: () => Promise<void>;
   newRound: () => Promise<void>;
   updateStory: (story: string) => Promise<void>;
+  resetVotes: () => Promise<void>;
   isRoomFull: boolean;
   allVoted: boolean;
 }
@@ -270,6 +271,28 @@ export function useRoomSync(roomId: string): UseRoomSyncReturn {
     analytics.trackStoryUpdated(roomId, story.length);
   }, [updateRoom, analytics, roomId]);
 
+  // Reset votes (clear votes without revealing)
+  const resetVotes = useCallback(async () => {
+    if (!roomState) return;
+
+    const newParticipants = roomState.participants.map(p => ({
+      ...p,
+      hasVoted: false,
+      vote: undefined
+    }));
+
+    await updateRoom({
+      votesRevealed: false,
+      participants: newParticipants
+    });
+    
+    // Track reset votes event
+    analytics.trackEvent('votes_reset', { 
+      room_id: roomId, 
+      participant_count: roomState.participants.length 
+    });
+  }, [roomState, updateRoom, analytics, roomId]);
+
   // Generate random vote for demo
   const generateRandomVote = () => {
     const votes = ['1', '2', '3', '5', '8'];
@@ -305,6 +328,7 @@ export function useRoomSync(roomId: string): UseRoomSyncReturn {
     revealVotes,
     newRound,
     updateStory,
+    resetVotes,
     isRoomFull,
     allVoted
   };

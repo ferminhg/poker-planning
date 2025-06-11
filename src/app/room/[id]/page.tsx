@@ -38,6 +38,7 @@ export default function RoomPage({ params }: { params: Promise<{ id: string }> }
     revealVotes,
     newRound,
     updateStory,
+    resetVotes,
     isRoomFull,
     allVoted
   } = useRoomSync(roomId);
@@ -195,8 +196,10 @@ export default function RoomPage({ params }: { params: Promise<{ id: string }> }
         <VotingControls
           allVoted={allVoted}
           votesRevealed={roomState?.votesRevealed || false}
+          hasAnyVotes={roomState?.participants.some(p => p.hasVoted) || false}
           onRevealVotes={revealVotes}
           onNewRound={newRound}
+          onResetVotes={resetVotes}
         />
 
         <div className="text-center mt-8">
