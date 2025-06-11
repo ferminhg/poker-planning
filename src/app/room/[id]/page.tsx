@@ -8,13 +8,18 @@ import ParticipantsList from '@/components/ParticipantsList';
 import VotingDeck from '@/components/VotingDeck';
 import VotingControls from '@/components/VotingControls';
 import NameModal from '@/components/NameModal';
-import { Participant } from '@/types';
+import RoomFullMessage from '@/components/RoomFullMessage';
+import ShareRoom from '@/components/ShareRoom';
+import { useRoomSync } from '@/hooks/useRoomSync';
+import { useAnalytics } from '@/hooks/useAnalytics';
 
 export default function RoomPage({ params }: { params: Promise<{ id: string }> }) {
   const [roomId, setRoomId] = useState<string>('');
-  const [userName, setUserName] = useState<string>('');
   const [showNameModal, setShowNameModal] = useState<boolean>(false);
   const [tempName, setTempName] = useState<string>('');
+  const [isJoining, setIsJoining] = useState<boolean>(false);
+  
+  const { trackUserNameChanged } = useAnalytics();
 
   useEffect(() => {
     params.then((resolvedParams) => {
@@ -22,65 +27,69 @@ export default function RoomPage({ params }: { params: Promise<{ id: string }> }
     });
   }, [params]);
 
+  const {
+    roomState,
+    currentUser,
+    isLoading,
+    error,
+    joinRoom,
+    leaveRoom,
+    vote,
+    revealVotes,
+    newRound,
+    updateStory,
+    isRoomFull,
+    allVoted
+  } = useRoomSync(roomId);
+
   useEffect(() => {
+    if (!roomId || isLoading) return;
+    
     const savedName = localStorage.getItem('planningPokerUserName');
-    if (savedName) {
-      setUserName(savedName);
-      setParticipants(prev => prev.map(p => 
-        p.id === '1' ? { ...p, name: savedName } : p
-      ));
-    } else {
+    if (savedName && !currentUser && !isRoomFull) {
+      // Try to join automatically with saved name
+      joinRoom(savedName).then((success) => {
+        if (!success) {
+          setShowNameModal(true);
+        }
+      });
+    } else if (!currentUser && !isRoomFull) {
       setShowNameModal(true);
     }
-  }, []);
+  }, [roomId, currentUser, isRoomFull, isLoading, joinRoom]);
 
-  const [participants, setParticipants] = useState<Participant[]>([
-    { id: '1', name: userName || 'You', hasVoted: false },
-    { id: '2', name: 'Alice', hasVoted: true },
-    { id: '3', name: 'Bob', hasVoted: false },
-    { id: '4', name: 'Charlie', hasVoted: true },
-  ]);
-  
-  const [currentStory, setCurrentStory] = useState('');
-  const [votesRevealed, setVotesRevealed] = useState(false);
-  const [myVote, setMyVote] = useState<string | null>(null);
-
-  const handleVote = (value: string) => {
-    setMyVote(value);
-    setParticipants(prev => prev.map(p => 
-      p.id === '1' ? { ...p, hasVoted: true, vote: value } : p
-    ));
-  };
-
-  const handleRevealVotes = () => {
-    setVotesRevealed(true);
-    setParticipants(prev => prev.map(p => ({
-      ...p,
-      vote: p.hasVoted ? (p.id === '1' ? myVote || undefined : ['3', '5', '8'][Math.floor(Math.random() * 3)]) : undefined
-    })));
-  };
-
-  const handleNewRound = () => {
-    setVotesRevealed(false);
-    setMyVote(null);
-    setParticipants(prev => prev.map(p => ({ ...p, hasVoted: false, vote: undefined })));
-  };
-
-  const handleSaveName = () => {
+  const handleSaveName = async () => {
     if (tempName.trim()) {
-      setUserName(tempName.trim());
-      localStorage.setItem('planningPokerUserName', tempName.trim());
-      setParticipants(prev => prev.map(p => 
-        p.id === '1' ? { ...p, name: tempName.trim() } : p
-      ));
-      setShowNameModal(false);
-      setTempName('');
+      setIsJoining(true);
+      try {
+        const success = await joinRoom(tempName.trim());
+        
+        if (success) {
+          setShowNameModal(false);
+          setTempName('');
+          
+          // Track name change if user already existed
+          if (currentUser) {
+            trackUserNameChanged(roomId);
+          }
+        } else {
+          // Room is full, could show error message
+          alert('Room is full. Maximum 4 participants allowed.');
+        }
+      } catch (error) {
+        console.error('Error joining room:', error);
+        alert('Failed to join room. Please try again.');
+      } finally {
+        setIsJoining(false);
+      }
     }
   };
 
   const handleChangeName = () => {
-    setTempName(userName);
-    setShowNameModal(true);
+    if (currentUser) {
+      setTempName(currentUser.name);
+      setShowNameModal(true);
+    }
   };
 
   const handleCancelName = () => {
@@ -88,41 +97,122 @@ export default function RoomPage({ params }: { params: Promise<{ id: string }> }
     setTempName('');
   };
 
-  const allVoted = participants.every(p => p.hasVoted);
+  const handleLeaveRoom = async () => {
+    try {
+      await leaveRoom();
+      window.location.href = '/';
+    } catch (error) {
+      console.error('Error leaving room:', error);
+      // Still redirect even if there's an error
+      window.location.href = '/';
+    }
+  };
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="text-center py-8">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <p className="mt-2 text-gray-600">Loading room...</p>
+        </div>
+      </Layout>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <Layout>
+        <div className="text-center py-8">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 max-w-md mx-auto">
+            <p className="text-red-800 font-medium">Error</p>
+            <p className="text-red-600 text-sm mt-1">{error}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="mt-3 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  // Show room full message if room is full and user is not in the room
+  if (isRoomFull && !currentUser) {
+    return (
+      <Layout>
+        <RoomFullMessage roomId={roomId} />
+      </Layout>
+    );
+  }
+
+  // Show loading or name modal if user hasn't joined yet
+  if (!currentUser) {
+    return (
+      <Layout>
+        <NameModal
+          isOpen={showNameModal}
+          tempName={tempName}
+          onTempNameChange={setTempName}
+          onSave={handleSaveName}
+          onCancel={handleCancelName}
+        />
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
       <RoomHeader 
         roomId={roomId}
-        userName={userName}
+        userName={currentUser.name}
         onChangeName={handleChangeName}
+        participantCount={roomState?.participants.length || 0}
+        maxParticipants={roomState?.maxParticipants || 4}
       />
 
       <div className="max-w-4xl mx-auto space-y-6">
+        <ShareRoom roomId={roomId} />
+        
         <StoryInput 
-          value={currentStory}
-          onChange={setCurrentStory}
+          value={roomState?.currentStory || ''}
+          onChange={updateStory}
         />
 
         <ParticipantsList 
-          participants={participants}
-          votesRevealed={votesRevealed}
+          participants={roomState?.participants || []}
+          votesRevealed={roomState?.votesRevealed || false}
         />
 
-        <VotingDeck onVote={handleVote} disabled={votesRevealed} />
+        <VotingDeck 
+          onVote={vote} 
+          disabled={roomState?.votesRevealed || false} 
+        />
 
         <VotingControls
           allVoted={allVoted}
-          votesRevealed={votesRevealed}
-          onRevealVotes={handleRevealVotes}
-          onNewRound={handleNewRound}
+          votesRevealed={roomState?.votesRevealed || false}
+          onRevealVotes={revealVotes}
+          onNewRound={newRound}
         />
+
+        <div className="text-center mt-8">
+          <button
+            onClick={handleLeaveRoom}
+            className="text-red-600 hover:text-red-700 text-sm underline"
+          >
+            Leave Room
+          </button>
+        </div>
       </div>
 
       <NameModal
         isOpen={showNameModal}
         tempName={tempName}
-        userName={userName}
+        userName={currentUser?.name}
         onTempNameChange={setTempName}
         onSave={handleSaveName}
         onCancel={handleCancelName}

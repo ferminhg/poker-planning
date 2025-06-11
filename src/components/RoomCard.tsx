@@ -2,13 +2,16 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAnalytics } from '@/hooks/useAnalytics';
 
 export default function RoomCard() {
   const [roomCode, setRoomCode] = useState('');
   const router = useRouter();
+  const { trackRoomCreated } = useAnalytics();
 
   const createRoom = () => {
     const newRoomId = Math.random().toString(36).substring(2, 15);
+    trackRoomCreated(newRoomId);
     router.push(`/room/${newRoomId}`);
   };
 
