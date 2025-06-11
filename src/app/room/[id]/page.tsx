@@ -23,6 +23,7 @@ export default function RoomPage({ params }: { params: Promise<{ id: string }> }
   const [lastAllVotedState, setLastAllVotedState] = useState<boolean>(false);
   const [resetVotingDeck, setResetVotingDeck] = useState<boolean>(false);
   const [lastVotesRevealed, setLastVotesRevealed] = useState<boolean>(false);
+  const [lastUserHasVoted, setLastUserHasVoted] = useState<boolean>(false);
   
   const { trackUserNameChanged } = useAnalytics();
 
@@ -76,22 +77,25 @@ export default function RoomPage({ params }: { params: Promise<{ id: string }> }
   useEffect(() => {
     if (roomState && currentUser) {
       const currentUserParticipant = roomState.participants.find(p => p.id === currentUser.id);
+      const currentVotesRevealed = roomState.votesRevealed;
+      const currentUserHasVoted = currentUserParticipant?.hasVoted || false;
       
       // If votes were revealed before but now they're not, it means a new round started
-      if (lastVotesRevealed && !roomState.votesRevealed) {
+      if (lastVotesRevealed && !currentVotesRevealed) {
         setResetVotingDeck(true);
         setTimeout(() => setResetVotingDeck(false), 100);
       }
       
       // If user had voted before but now hasVoted is false, votes were reset
-      if (currentUserParticipant && !currentUserParticipant.hasVoted && !roomState.votesRevealed) {
+      if (lastUserHasVoted && !currentUserHasVoted && !currentVotesRevealed) {
         setResetVotingDeck(true);
         setTimeout(() => setResetVotingDeck(false), 100);
       }
       
-      setLastVotesRevealed(roomState.votesRevealed);
+      setLastVotesRevealed(currentVotesRevealed);
+      setLastUserHasVoted(currentUserHasVoted);
     }
-  }, [roomState, currentUser, lastVotesRevealed]);
+  }, [roomState, currentUser, lastVotesRevealed, lastUserHasVoted]);
 
   const handleSaveName = async () => {
     if (tempName.trim()) {
