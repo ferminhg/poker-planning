@@ -13,7 +13,7 @@ async function getKV() {
 }
 
 // Fallback in-memory storage for development
-const memoryStore = new Map<string, unknown>();
+const memoryStore = new Map<string, RoomState>();
 
 interface RoomState {
   id: string;
@@ -41,7 +41,7 @@ async function getRoom(id: string): Promise<RoomState | null> {
   }
   
   // Use memory store as fallback
-  return memoryStore.get(`room:${id}`) || null;
+  return memoryStore.get(`room:${id}`) ?? null;
 }
 
 async function setRoom(id: string, data: RoomState): Promise<void> {
