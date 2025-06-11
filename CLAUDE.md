@@ -79,3 +79,7 @@ npm run lint
 - **Production**: Uses Vercel KV (Redis) for persistent storage
 - **Development**: Falls back to in-memory storage when KV credentials are not available
 - **Error Handling**: Graceful degradation if KV service is unavailable
+
+## Workflow Notes
+
+- no hagas commits, los hare yo.

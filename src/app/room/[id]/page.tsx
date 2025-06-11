@@ -201,14 +201,6 @@ export default function RoomPage({ params }: { params: Promise<{ id: string }> }
           onResetVotes={resetVotes}
         />
 
-        <div className="text-center mt-8">
-          <button
-            onClick={handleLeaveRoom}
-            className="text-red-600 hover:text-red-700 text-sm underline"
-          >
-            Leave Room
-          </button>
-        </div>
       </div>
 
       <NameModal
