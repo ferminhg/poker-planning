@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Layout from '@/components/Layout';
+import Footer from '@/components/Footer';
 import RoomHeader from '@/components/RoomHeader';
 import StoryInput from '@/components/StoryInput';
 import ParticipantsList from '@/components/ParticipantsList';
@@ -210,71 +210,84 @@ export default function RoomPage({ params }: { params: Promise<{ id: string }> }
   // Show loading state
   if (isLoading) {
     return (
-      <Layout>
-        <div className="text-center py-8">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          <p className="mt-2 text-gray-600">Loading room...</p>
+      <>
+        <div className="flex-1 container mx-auto px-4 py-8">
+          <div className="text-center py-8">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <p className="mt-2 text-gray-600 dark:text-gray-400">Loading room...</p>
+          </div>
         </div>
-      </Layout>
+        <Footer />
+      </>
     );
   }
 
   // Show error state
   if (error) {
     return (
-      <Layout>
-        <div className="text-center py-8">
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 max-w-md mx-auto">
-            <p className="text-red-800 font-medium">Error</p>
-            <p className="text-red-600 text-sm mt-1">{error}</p>
-            <button
-              onClick={() => window.location.reload()}
-              className="mt-3 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm"
-            >
-              Retry
-            </button>
+      <>
+        <div className="flex-1 container mx-auto px-4 py-8">
+          <div className="text-center py-8">
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg p-4 max-w-md mx-auto">
+              <p className="text-red-800 dark:text-red-400 font-medium">Error</p>
+              <p className="text-red-600 dark:text-red-300 text-sm mt-1">{error}</p>
+              <button
+                onClick={() => window.location.reload()}
+                className="mt-3 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm"
+              >
+                Retry
+              </button>
+            </div>
           </div>
         </div>
-      </Layout>
+        <Footer />
+      </>
     );
   }
 
   // Show room full message if room is full and user is not in the room
   if (isRoomFull && !currentUser) {
     return (
-      <Layout>
-        <RoomFullMessage roomId={roomId} />
-      </Layout>
+      <>
+        <div className="flex-1 container mx-auto px-4 py-8">
+          <RoomFullMessage roomId={roomId} />
+        </div>
+        <Footer />
+      </>
     );
   }
 
   // Show loading or name modal if user hasn't joined yet
   if (!currentUser) {
     return (
-      <Layout>
-        <NameModal
-          isOpen={showNameModal}
-          tempName={tempName}
-          onTempNameChange={setTempName}
-          onSave={handleSaveName}
-          onCancel={handleCancelName}
-        />
-      </Layout>
+      <>
+        <div className="flex-1 container mx-auto px-4 py-8">
+          <NameModal
+            isOpen={showNameModal}
+            tempName={tempName}
+            onTempNameChange={setTempName}
+            onSave={handleSaveName}
+            onCancel={handleCancelName}
+          />
+        </div>
+        <Footer />
+      </>
     );
   }
 
   return (
-    <Layout>
-      <RoomHeader 
-        roomId={roomId}
-        userName={currentUser.name}
-        onChangeName={handleChangeName}
-        participantCount={roomState?.participants.length || 0}
-        maxParticipants={roomState?.maxParticipants || 4}
-        onShareRoom={handleOpenShare}
-      />
+    <>
+      <div className="flex-1 container mx-auto px-4 py-8">
+        <RoomHeader 
+          roomId={roomId}
+          userName={currentUser.name}
+          onChangeName={handleChangeName}
+          participantCount={roomState?.participants.length || 0}
+          maxParticipants={roomState?.maxParticipants || 4}
+          onShareRoom={handleOpenShare}
+        />
 
-      <div className="max-w-4xl mx-auto space-y-6">
+        <div className="max-w-4xl mx-auto space-y-6">
         
         <StoryInput 
           value={roomState?.currentStory || ''}
@@ -303,6 +316,7 @@ export default function RoomPage({ params }: { params: Promise<{ id: string }> }
           onResetVotes={handleResetVotes}
         />
 
+        </div>
       </div>
 
       <NameModal
@@ -344,6 +358,8 @@ export default function RoomPage({ params }: { params: Promise<{ id: string }> }
           onComplete={clearAnimation}
         />
       )}
-    </Layout>
+
+      <Footer />
+    </>
   );
 }

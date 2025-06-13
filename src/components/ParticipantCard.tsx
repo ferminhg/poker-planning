@@ -42,13 +42,13 @@ export default function ParticipantCard({ participant, votesRevealed, onSendEmoj
       {/* Emoji Tooltip */}
       {showEmojiTooltip && (
         <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 z-50">
-          <div className="bg-white border border-gray-200 rounded-lg p-2 shadow-lg">
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg p-2 shadow-lg">
             <div className="flex space-x-2">
               {['👍', '👎', '❤️', '😂'].map((emoji) => (
                 <button
                   key={emoji}
                   onClick={() => handleEmojiSelect(emoji)}
-                  className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded-md transition-colors text-lg"
+                  className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors text-lg"
                   title={`Send ${emoji}`}
                 >
                   {emoji}
@@ -56,7 +56,7 @@ export default function ParticipantCard({ participant, votesRevealed, onSendEmoj
               ))}
             </div>
             {/* Arrow pointing down */}
-            <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-gray-200"></div>
+            <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-gray-200 dark:border-t-gray-600"></div>
           </div>
         </div>
       )}
@@ -65,20 +65,20 @@ export default function ParticipantCard({ participant, votesRevealed, onSendEmoj
       <div
         className={`p-3 rounded-md border text-center transition-colors relative ${
           participant.hasVoted
-            ? 'border-green-300 bg-green-50'
-            : 'border-gray-200 bg-gray-50'
-        } ${canShowEmoji ? 'cursor-pointer hover:border-blue-300 hover:bg-blue-50' : ''}`}
+            ? 'border-green-300 dark:border-green-600 bg-green-50 dark:bg-green-900/20'
+            : 'border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800'
+        } ${canShowEmoji ? 'cursor-pointer hover:border-blue-300 dark:hover:border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20' : ''}`}
       >
-        <div ref={nameRef} className="font-medium text-gray-900 text-sm truncate">{participant.name}</div>
+        <div ref={nameRef} className="font-medium text-gray-900 dark:text-gray-100 text-sm truncate">{participant.name}</div>
         <div className="mt-2">
           {votesRevealed && participant.vote ? (
             <div className="inline-block bg-blue-600 text-white px-2 py-1 rounded text-sm font-medium">
               {participant.vote}
             </div>
           ) : participant.hasVoted ? (
-            <div className="text-green-600 text-xs font-medium">✓ Voted</div>
+            <div className="text-green-600 dark:text-green-400 text-xs font-medium">✓ Voted</div>
           ) : (
-            <div className="text-gray-500 text-xs">Waiting...</div>
+            <div className="text-gray-500 dark:text-gray-400 text-xs">Waiting...</div>
           )}
         </div>
         
@@ -88,7 +88,7 @@ export default function ParticipantCard({ participant, votesRevealed, onSendEmoj
             {participant.receivedEmojis.slice(-3).map((emojiData, index) => {
               const emoji = typeof emojiData === 'string' ? emojiData : emojiData.emoji;
               return (
-                <span key={index} className="text-sm animate-bounce bg-white rounded-full px-1 shadow-sm">
+                <span key={index} className="text-sm animate-bounce bg-white dark:bg-gray-700 rounded-full px-1 shadow-sm">
                   {emoji}
                 </span>
               );

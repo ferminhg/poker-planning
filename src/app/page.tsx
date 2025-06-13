@@ -1,14 +1,19 @@
 import Hero from '@/components/Hero';
 import Features from '@/components/Features';
 import HowItWorks from '@/components/HowItWorks';
-import Layout from '@/components/Layout';
+import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
 
 export default function Home() {
   return (
-    <Layout>
-      <Hero />
-      <Features />
-      <HowItWorks />
-    </Layout>
+    <>
+      <Navbar />
+      <div className="flex-1">
+        <Hero />
+        <Features />
+        <HowItWorks />
+      </div>
+      <Footer />
+    </>
   );
 }

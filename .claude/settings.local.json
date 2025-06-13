@@ -4,12 +4,20 @@
       "Bash(mkdir:*)",
       "Bash(npm run dev:*)",
       "WebFetch(domain:github.com)",
+      "WebFetch(domain:localhost:3000)",
       "Bash(npm install:*)",
       "Bash(npm run build:*)",
       "Bash(grep:*)",
       "Bash(rg:*)",
       "Bash(git add:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(nvm use:*)",
+      "Bash(npm run lint)",
+      "Bash(rm:*)",
+      "Bash(npm test)",
+      "Bash(cat:*)",
+      "Bash(npm test:*)",
+      "Bash(npm test)"
     ],
     "deny": []
   }
