@@ -117,9 +117,9 @@ describe('Navbar', () => {
     const desktopNav = screen.getByText('Features').closest('div');
     expect(desktopNav).toHaveClass('hidden', 'md:flex');
     
-    // Check for mobile menu
-    const mobileMenu = screen.getAllByTestId('client-theme-toggle')[1].closest('div');
-    expect(mobileMenu).toHaveClass('md:hidden');
+    // Check for mobile actions container
+    const mobileActions = screen.getAllByTestId('client-theme-toggle')[1].closest('div');
+    expect(mobileActions).toHaveClass('md:hidden', 'flex', 'items-center', 'space-x-3');
   });
 
   it('renders navigation structure correctly', () => {

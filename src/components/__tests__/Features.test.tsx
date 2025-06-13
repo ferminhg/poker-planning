@@ -40,14 +40,17 @@ describe('Features', () => {
   it('has correct section id for navigation', () => {
     render(<Features />);
     
-    const section = screen.getByText('Everything You Need for Effective Planning').closest('div')?.parentElement;
+    // The id is on the outermost div, not the parent of the heading
+    const section = document.getElementById('features');
+    expect(section).toBeInTheDocument();
     expect(section).toHaveAttribute('id', 'features');
   });
 
   it('applies correct CSS classes for styling', () => {
     render(<Features />);
     
-    const mainSection = screen.getByText('Everything You Need for Effective Planning').closest('div')?.parentElement;
+    // The classes are on the outermost div with id="features"
+    const mainSection = document.getElementById('features');
     expect(mainSection).toHaveClass('py-20', 'px-4', 'bg-gray-50');
   });
 

@@ -45,7 +45,11 @@ describe('NameModal', () => {
     await user.type(input, 'Jane');
     
     expect(mockOnTempNameChange).toHaveBeenCalledTimes(4); // One call per character
-    expect(mockOnTempNameChange).toHaveBeenLastCalledWith('Jane');
+    // Check all the calls to verify the complete typing sequence
+    expect(mockOnTempNameChange).toHaveBeenNthCalledWith(1, 'J');
+    expect(mockOnTempNameChange).toHaveBeenNthCalledWith(2, 'Ja');
+    expect(mockOnTempNameChange).toHaveBeenNthCalledWith(3, 'Jan');
+    expect(mockOnTempNameChange).toHaveBeenNthCalledWith(4, 'Jane');
   });
 
   it('calls onSave when Save button is clicked', async () => {

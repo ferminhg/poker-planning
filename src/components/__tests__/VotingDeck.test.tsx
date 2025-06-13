@@ -4,7 +4,12 @@ import VotingDeck from '../VotingDeck';
 
 // Mock VotingCard component
 jest.mock('../VotingCard', () => {
-  return function MockVotingCard({ value, isSelected, onClick, disabled }: any) {
+  return function MockVotingCard({ value, isSelected, onClick, disabled }: {
+    value: string;
+    isSelected: boolean;
+    onClick: () => void;
+    disabled: boolean;
+  }) {
     return (
       <button
         onClick={onClick}
@@ -61,7 +66,9 @@ describe('VotingDeck', () => {
     await user.click(screen.getByTestId('voting-card-13'));
     
     expect(screen.getByText('Selected:')).toBeInTheDocument();
-    expect(screen.getByText('13')).toBeInTheDocument();
+    // Look for the selected value in a more robust way
+    const selectedElement = screen.getByText('Selected:').parentElement;
+    expect(selectedElement).toHaveTextContent('Selected:13');
   });
 
   it('does not show selected value text when no card is selected', () => {

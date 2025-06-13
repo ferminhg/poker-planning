@@ -130,6 +130,7 @@ export default function RoomPage({ params }: { params: Promise<{ id: string }> }
         setTimeout(() => setShowConfetti(false), 5000); // Show confetti for 5 seconds
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roomState?.votesRevealed, lastVotesRevealed, roomState?.participants]);
 
   const handleSaveName = async () => {

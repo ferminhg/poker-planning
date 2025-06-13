@@ -10,6 +10,10 @@ describe('RoomFullMessage', () => {
 
   beforeEach(() => {
     mockLocation.href = '';
+    
+    // Delete existing location property first if it exists
+    delete (window as unknown as { location?: unknown }).location;
+    
     // Mock window.location with configurable property
     Object.defineProperty(window, 'location', {
       value: mockLocation,

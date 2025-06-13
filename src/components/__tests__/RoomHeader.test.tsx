@@ -3,25 +3,25 @@ import RoomHeader from '../RoomHeader';
 
 // Mock all child components
 jest.mock('../RoomTitle', () => {
-  return function MockRoomTitle({ roomId }: any) {
+  return function MockRoomTitle({ roomId }: { roomId: string }) {
     return <h1 data-testid="room-title">Room {roomId}</h1>;
   };
 });
 
 jest.mock('../ParticipantCounter', () => {
-  return function MockParticipantCounter({ participantCount, maxParticipants }: any) {
+  return function MockParticipantCounter({ participantCount, maxParticipants }: { participantCount: number; maxParticipants: number }) {
     return <div data-testid="participant-counter">{participantCount}/{maxParticipants} participants</div>;
   };
 });
 
 jest.mock('../UserInfo', () => {
-  return function MockUserInfo({ userName, onChangeName }: any) {
+  return function MockUserInfo({ userName, onChangeName }: { userName: string; onChangeName: () => void }) {
     return <div data-testid="user-info" onClick={onChangeName}>{userName}</div>;
   };
 });
 
 jest.mock('../HeaderActions', () => {
-  return function MockHeaderActions({ onShareRoom }: any) {
+  return function MockHeaderActions({ onShareRoom }: { onShareRoom?: () => void }) {
     return <div data-testid="header-actions" onClick={onShareRoom}>Actions</div>;
   };
 });

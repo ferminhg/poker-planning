@@ -28,6 +28,9 @@ describe('ShareRoom', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     
+    // Delete existing location property first if it exists
+    delete (window as unknown as { location?: unknown }).location;
+    
     // Mock window.location
     Object.defineProperty(window, 'location', {
       value: {
@@ -184,7 +187,7 @@ describe('ShareRoom', () => {
   it('handles empty room URL when window is undefined', () => {
     // Temporarily remove window for SSR simulation
     const originalWindow = global.window;
-    // @ts-ignore
+    // @ts-expect-error - Intentionally deleting window for SSR simulation testing
     delete global.window;
     
     render(<ShareRoom {...defaultProps} />);

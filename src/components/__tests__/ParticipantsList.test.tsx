@@ -5,7 +5,10 @@ import { Participant } from '@/types';
 
 // Mock ParticipantCard component
 jest.mock('../ParticipantCard', () => {
-  return function MockParticipantCard({ participant, votesRevealed, currentUserId, onSendEmoji }: any) {
+  return function MockParticipantCard({ participant, votesRevealed }: { 
+    participant: { id: string; name: string };
+    votesRevealed: boolean;
+  }) {
     return (
       <div data-testid={`participant-card-${participant.id}`}>
         {participant.name} - {votesRevealed ? 'revealed' : 'hidden'}

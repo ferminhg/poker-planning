@@ -2,7 +2,10 @@ import { render } from '@testing-library/react';
 import EmojiThrow from '../EmojiThrow';
 
 // Mock Element.animate
-const mockAnimate = jest.fn();
+const mockAnimate = jest.fn(() => ({
+  onfinish: null,
+  cancel: jest.fn(),
+}));
 Element.prototype.animate = mockAnimate;
 
 // Mock Math.random for consistent corner selection

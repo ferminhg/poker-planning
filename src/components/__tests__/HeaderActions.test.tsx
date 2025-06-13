@@ -9,7 +9,7 @@ jest.mock('../ClientThemeToggle', () => {
 });
 
 jest.mock('../ShareButton', () => {
-  return function MockShareButton({ onShare }: any) {
+  return function MockShareButton({ onShare }: { onShare: () => void }) {
     return <button data-testid="share-button" onClick={onShare}>Share</button>;
   };
 });

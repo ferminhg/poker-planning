@@ -41,6 +41,6 @@ describe('RoomTitle', () => {
     
     render(<RoomTitle roomId={roomId} />)
     
-    expect(screen.getByText('Room ')).toBeInTheDocument()
+    expect(screen.getByText(/^Room\s*$/)).toBeInTheDocument()
   })
 })

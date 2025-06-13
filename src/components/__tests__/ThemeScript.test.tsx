@@ -36,7 +36,7 @@ describe('ThemeScript', () => {
     });
 
     // Mock timers - create fresh mocks each time
-    mockSetTimeout = jest.fn((fn, delay) => {
+    mockSetTimeout = jest.fn((fn) => {
       fn(); // Execute immediately for testing
       return 123; // Mock timer ID
     });
