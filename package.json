@@ -1,7 +1,19 @@
 {
   "name": "poker-planning",
   "version": "0.1.0",
-  "private": true,
+  "private": false,
+  "description": "A modern, real-time Planning Poker application for agile teams built with Next.js",
+  "keywords": ["planning-poker", "agile", "scrum", "estimation", "nextjs", "react", "typescript"],
+  "author": "Contributors",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/poker-planning.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-username/poker-planning/issues"
+  },
+  "homepage": "https://github.com/your-username/poker-planning#readme",
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
