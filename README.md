@@ -7,7 +7,6 @@
 
 A modern, real-time Planning Poker application designed for agile teams to estimate story points effectively. Built with Next.js, TypeScript, and Tailwind CSS.
 
-![Planning Poker Screenshot](docs/screenshot.png)
 
 ## ✨ Features
 
