@@ -34,6 +34,7 @@ interface UseRoomSyncReturn {
 
 const generateUserId = () => Math.random().toString(36).substring(2, 15);
 const POLLING_INTERVAL = 2000; // 2 seconds
+const MAX_PARTICIPANTS = 10;
 
 export function useRoomSync(roomId: string): UseRoomSyncReturn {
   const [roomState, setRoomState] = useState<RoomState | null>(null);
@@ -72,7 +73,7 @@ export function useRoomSync(roomId: string): UseRoomSyncReturn {
           currentStory: '',
           votesRevealed: false,
           participants: [],
-          maxParticipants: 4,
+          maxParticipants: MAX_PARTICIPANTS,
           lastUpdated: Date.now(),
           createdAt: Date.now()
         });
