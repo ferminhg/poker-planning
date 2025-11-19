@@ -26,6 +26,7 @@ interface UseRoomReturn {
 }
 
 const generateUserId = () => Math.random().toString(36).substring(2, 15);
+const MAX_PARTICIPANTS = 10;
 
 // Storage keys
 const getRoomStorageKey = (roomId: string) => `planningPoker_room_${roomId}`;
@@ -39,7 +40,7 @@ export function useRoom(roomId: string): UseRoomReturn {
     currentStory: '',
     votesRevealed: false,
     participants: [],
-    maxParticipants: 4,
+    maxParticipants: MAX_PARTICIPANTS,
     lastUpdated: Date.now()
   });
 

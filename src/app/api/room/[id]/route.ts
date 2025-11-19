@@ -102,6 +102,8 @@ export async function GET(
   }
 }
 
+const MAX_PARTICIPANTS = 10;
+
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -121,7 +123,7 @@ export async function POST(
       currentStory: roomState.currentStory || '',
       votesRevealed: Boolean(roomState.votesRevealed),
       participants: Array.isArray(roomState.participants) ? roomState.participants : [],
-      maxParticipants: roomState.maxParticipants || 4,
+      maxParticipants: roomState.maxParticipants || MAX_PARTICIPANTS,
       lastUpdated: Date.now(),
       createdAt: roomState.createdAt || Date.now()
     };
