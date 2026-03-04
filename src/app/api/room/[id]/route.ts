@@ -1,14 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Participant, RoomAction } from '@/types';
 
-// Dynamic import for KV to handle missing environment variables
-async function getKV() {
+// KV availability check
+let kvAvailable: boolean | null = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let kvInstance: any = null;
+
+async function initializeKV() {
+  if (kvAvailable !== null) return;
+
   try {
     const { kv } = await import('@vercel/kv');
-    return kv;
+    kvInstance = kv;
+
+    if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
+      kvAvailable = true;
+    } else {
+      kvAvailable = false;
+    }
   } catch (error) {
-    console.error('KV not available:', error);
-    return null;
+    kvAvailable = false;
   }
 }
 
@@ -29,37 +40,37 @@ const ROOM_TTL = 3600; // 1 hour
 
 // Storage abstraction layer
 async function getRoom(id: string): Promise<RoomState | null> {
-  const kv = await getKV();
-  
-  if (kv && process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
+  await initializeKV();
+
+  if (kvAvailable && kvInstance) {
     try {
-      return await kv.get<RoomState>(`room:${id}`);
+      return (await kvInstance.get(`room:${id}`)) as RoomState | null;
     } catch (error) {
-      console.error('KV get error:', error);
+      console.warn('KV get failed, using memory store:', error);
       // Fall back to memory store
     }
   }
-  
+
   // Use memory store as fallback
   return memoryStore.get(`room:${id}`) ?? null;
 }
 
 async function setRoom(id: string, data: RoomState): Promise<void> {
-  const kv = await getKV();
-  
-  if (kv && process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
+  await initializeKV();
+
+  if (kvAvailable && kvInstance) {
     try {
-      await kv.set(`room:${id}`, data, { ex: ROOM_TTL });
+      await kvInstance.set(`room:${id}`, data, { ex: ROOM_TTL });
       return;
     } catch (error) {
-      console.error('KV set error:', error);
+      console.warn('KV set failed, using memory store:', error);
       // Fall back to memory store
     }
   }
-  
+
   // Use memory store as fallback
   memoryStore.set(`room:${id}`, data);
-  
+
   // Clean up memory store after TTL (simple cleanup)
   setTimeout(() => {
     memoryStore.delete(`room:${id}`);
@@ -67,18 +78,18 @@ async function setRoom(id: string, data: RoomState): Promise<void> {
 }
 
 async function deleteRoom(id: string): Promise<void> {
-  const kv = await getKV();
-  
-  if (kv && process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
+  await initializeKV();
+
+  if (kvAvailable && kvInstance) {
     try {
-      await kv.del(`room:${id}`);
+      await kvInstance.del(`room:${id}`);
       return;
     } catch (error) {
-      console.error('KV delete error:', error);
+      console.warn('KV delete failed, using memory store:', error);
       // Fall back to memory store
     }
   }
-  
+
   // Use memory store as fallback
   memoryStore.delete(`room:${id}`);
 }
@@ -89,30 +100,9 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    
-    const kv = await getKV();
-    if (!kv || !process.env.KV_REST_API_URL || !process.env.KV_REST_API_TOKEN) {
-      // If KV is unavailable, we cannot stream effectively. Fall back to initial JSON fetch.
-      console.warn('KV not configured for streaming. Falling back to initial JSON fetch.');
-      const roomData = await getRoom(id);
-      return NextResponse.json(roomData || null, { status: roomData ? 200 : 404 });
-    }
-
-    // Logic for streaming using KV Listen API (assuming it's available or we implement polling logic inside the stream)
-    // Since KV Listen API is not directly available via standard Vercel KV SDK in this setup, 
-    // we must rely on the client polling OR implement a complex mechanism based on re-fetching periodically.
-    // Given the constraint, switching to SSE requires a mechanism to know WHEN to push.
-    // For simplicity and immediate impact, I will revert to a very short poll time first, 
-    // and then suggest a proper WebSocket/SSE implementation if that is insufficient.
-    
-    // REVERTING TO INITIAL JSON GET for compatibility with existing fetch.
     const roomData = await getRoom(id);
-    
-    if (!roomData) {
-      return NextResponse.json(null, { status: 404 });
-    }
 
-    return NextResponse.json(roomData);
+    return NextResponse.json(roomData || null, { status: roomData ? 200 : 404 });
   } catch (error) {
     console.error('Error getting room:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
