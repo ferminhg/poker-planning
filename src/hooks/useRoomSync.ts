@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Participant } from '@/types';
+import { Participant, RoomAction } from '@/types';
 import { useAnalytics } from '@/hooks/useAnalytics';
 
 interface RoomState {
@@ -19,7 +19,6 @@ interface UseRoomSyncReturn {
   currentUser: Participant | null;
   isLoading: boolean;
   error: string | null;
-  updateRoom: (newState: Partial<RoomState>) => Promise<void>;
   joinRoom: (userName: string) => Promise<boolean>;
   leaveRoom: () => Promise<void>;
   vote: (value: string) => Promise<void>;
@@ -108,55 +107,47 @@ export function useRoomSync(roomId: string): UseRoomSyncReturn {
     }
   }, [roomId]);
 
-  // Update room state on server
-  const updateRoom = useCallback(async (newState: Partial<RoomState>) => {
-    if (!roomState || isUpdatingRef.current) return;
+  // Perform an atomic action on the server
+  const performAction = useCallback(async (action: RoomAction) => {
+    if (!roomId) return;
 
     isUpdatingRef.current = true;
     
     try {
-      const updatedState = {
-        ...roomState,
-        ...newState,
-        lastUpdated: Date.now()
-      };
-
-      // Optimistic update
-      setRoomState(updatedState);
-
       const response = await fetch(`/api/room/${roomId}`, {
-        method: 'POST',
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedState)
+        body: JSON.stringify(action)
       });
 
       if (!response.ok) {
-        throw new Error('Failed to update room');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to perform action');
       }
 
       const result = await response.json();
       if (result.state) {
         setRoomState(result.state);
         lastServerUpdateRef.current = result.state.lastUpdated;
+        
+        const userId = currentUserIdRef.current;
+        if (userId) {
+          const user = result.state.participants.find((p: Participant) => p.id === userId);
+          setCurrentUser(user || null);
+        }
       }
-
       setError(null);
     } catch (err) {
-      console.error('Error updating room:', err);
-      setError('Failed to update room');
-      // Revert optimistic update by fetching current state
+      console.error('Error performing action:', err);
+      setError(err instanceof Error ? err.message : 'Failed to sync with server');
       await fetchRoomState();
     } finally {
       isUpdatingRef.current = false;
     }
-  }, [roomState, roomId, fetchRoomState]);
+  }, [roomId, fetchRoomState]);
 
   // Join room
   const joinRoom = useCallback(async (userName: string): Promise<boolean> => {
-    if (!roomState || roomState.participants.length >= roomState.maxParticipants) {
-      return false;
-    }
-
     let userId = currentUserIdRef.current;
     if (!userId) {
       userId = generateUserId();
@@ -166,40 +157,27 @@ export function useRoomSync(roomId: string): UseRoomSyncReturn {
 
     localStorage.setItem('planningPokerUserName', userName);
 
-    const newUser: Participant = {
-      id: userId,
-      name: userName,
-      hasVoted: false
-    };
-
-    setCurrentUser(newUser);
-
-    const existingUserIndex = roomState.participants.findIndex(p => p.id === userId);
-    let newParticipants;
-
-    if (existingUserIndex >= 0) {
-      newParticipants = [...roomState.participants];
-      newParticipants[existingUserIndex] = { ...newParticipants[existingUserIndex], name: userName };
-    } else {
-      newParticipants = [...roomState.participants, newUser];
+    try {
+      await performAction({ 
+        type: 'JOIN', 
+        userName, 
+        userId 
+      });
+      
+      // Track join event
+      analytics.trackRoomJoined(roomId, roomState?.participants.length || 0);
+      return true;
+    } catch (err) {
+      return false;
     }
-
-    await updateRoom({ participants: newParticipants });
-    
-    // Track join event
-    analytics.trackRoomJoined(roomId, newParticipants.length);
-    
-    return true;
-  }, [roomState, roomId, updateRoom, analytics]);
+  }, [roomId, performAction, analytics, roomState]);
 
   // Leave room
   const leaveRoom = useCallback(async () => {
-    if (!roomState || !currentUserIdRef.current) return;
-
     const userId = currentUserIdRef.current;
-    const newParticipants = roomState.participants.filter(p => p.id !== userId);
+    if (!userId) return;
 
-    await updateRoom({ participants: newParticipants });
+    await performAction({ type: 'LEAVE', userId });
     
     // Track leave event
     const sessionDuration = Math.floor((Date.now() - sessionStartRef.current) / 1000);
@@ -208,148 +186,85 @@ export function useRoomSync(roomId: string): UseRoomSyncReturn {
     setCurrentUser(null);
     currentUserIdRef.current = null;
     localStorage.removeItem(`planningPoker_userId_${roomId}`);
-  }, [roomState, roomId, updateRoom, analytics]);
+  }, [roomId, performAction, analytics]);
 
   // Vote
   const vote = useCallback(async (value: string) => {
-    if (!roomState || !currentUserIdRef.current) return;
-
     const userId = currentUserIdRef.current;
-    const newParticipants = roomState.participants.map(p => 
-      p.id === userId ? { ...p, hasVoted: true, vote: value } : p
-    );
+    if (!userId) return;
 
-    await updateRoom({ participants: newParticipants });
+    await performAction({ type: 'VOTE', userId, vote: value });
     
     // Track vote event
-    analytics.trackVoteCast(roomId, value, roomState.participants.length);
-  }, [roomState, updateRoom, analytics, roomId]);
+    analytics.trackVoteCast(roomId, value, roomState?.participants.length || 0);
+  }, [roomId, performAction, analytics, roomState]);
 
   // Reveal votes
   const revealVotes = useCallback(async () => {
-    if (!roomState) return;
-
-    const newParticipants = roomState.participants.map(p => ({
-      ...p,
-      vote: p.hasVoted ? (p.vote || generateRandomVote()) : undefined
-    }));
-
-    await updateRoom({ 
-      votesRevealed: true,
-      participants: newParticipants
-    });
+    await performAction({ type: 'REVEAL' });
     
     // Track reveal votes event
-    const voteValues = newParticipants
-      .filter(p => p.vote)
-      .map(p => p.vote as string);
-    analytics.trackVotesRevealed(roomId, roomState.participants.length, voteValues);
-  }, [roomState, updateRoom, analytics, roomId]);
+    if (roomState) {
+      const voteValues = roomState.participants
+        .filter(p => p.hasVoted)
+        .map(p => p.vote || '');
+      analytics.trackVotesRevealed(roomId, roomState.participants.length, voteValues);
+    }
+  }, [roomId, performAction, analytics, roomState]);
 
   // New round
   const newRound = useCallback(async () => {
-    if (!roomState) return;
-
-    const newParticipants = roomState.participants.map(p => ({
-      ...p,
-      hasVoted: false,
-      vote: undefined
-    }));
-
-    await updateRoom({
-      votesRevealed: false,
-      participants: newParticipants
-    });
+    await performAction({ type: 'NEW_ROUND' });
     
     // Track new round event
-    analytics.trackNewRoundStarted(roomId, roomState.participants.length);
-  }, [roomState, updateRoom, analytics, roomId]);
+    analytics.trackNewRoundStarted(roomId, roomState?.participants.length || 0);
+  }, [roomId, performAction, analytics, roomState]);
 
   // Update story
   const updateStory = useCallback(async (story: string) => {
-    await updateRoom({ currentStory: story });
+    await performAction({ type: 'UPDATE_STORY', story });
     
     // Track story update event
     analytics.trackStoryUpdated(roomId, story.length);
-  }, [updateRoom, analytics, roomId]);
+  }, [roomId, performAction, analytics]);
 
   // Reset votes (clear votes without revealing)
   const resetVotes = useCallback(async () => {
-    if (!roomState) return;
-
-    const newParticipants = roomState.participants.map(p => ({
-      ...p,
-      hasVoted: false,
-      vote: undefined
-    }));
-
-    await updateRoom({
-      votesRevealed: false,
-      participants: newParticipants
-    });
+    await performAction({ type: 'NEW_ROUND' });
     
     // Track reset votes event
     analytics.trackEvent('votes_reset', { 
       room_id: roomId, 
-      participant_count: roomState.participants.length 
+      participant_count: roomState?.participants.length || 0
     });
-  }, [roomState, updateRoom, analytics, roomId]);
+  }, [roomId, performAction, analytics, roomState]);
 
   // Send emoji to participant
   const sendEmoji = useCallback(async (targetUserId: string, emoji: string) => {
-    if (!roomState) return;
-
-    const emojiWithTimestamp = {
-      emoji,
-      timestamp: Date.now()
-    };
-
-    const newParticipants = roomState.participants.map(p => {
-      if (p.id === targetUserId) {
-        const currentEmojis = p.receivedEmojis || [];
-        return {
-          ...p,
-          receivedEmojis: [...currentEmojis, emojiWithTimestamp]
-        };
-      }
-      return p;
+    const timestamp = Date.now();
+    await performAction({ 
+      type: 'SEND_EMOJI', 
+      targetUserId, 
+      emoji, 
+      timestamp 
     });
-
-    await updateRoom({ participants: newParticipants });
     
     // Track emoji sent event
     analytics.trackEvent('emoji_sent', { 
       room_id: roomId, 
       emoji: emoji,
-      participant_count: roomState.participants.length 
+      participant_count: roomState?.participants.length || 0
     });
 
     // Auto-remove emoji after 2 seconds
     setTimeout(async () => {
-      if (!roomState) return;
-      
-      const updatedParticipants = roomState.participants.map(p => {
-        if (p.id === targetUserId) {
-          const filteredEmojis = (p.receivedEmojis || []).filter(
-            e => typeof e === 'string' || (e.timestamp && Date.now() - e.timestamp < 2000)
-          );
-          return {
-            ...p,
-            receivedEmojis: filteredEmojis
-          };
-        }
-        return p;
+      await performAction({ 
+        type: 'REMOVE_EMOJI', 
+        targetUserId, 
+        timestamp 
       });
-
-      await updateRoom({ participants: updatedParticipants });
     }, 2000);
-  }, [roomState, updateRoom, analytics, roomId]);
-
-  // Generate random vote for demo
-  const generateRandomVote = () => {
-    const votes = ['1', '2', '3', '5', '8'];
-    return votes[Math.floor(Math.random() * votes.length)];
-  };
+  }, [roomId, performAction, analytics, roomState]);
 
   // Initial fetch
   useEffect(() => {
@@ -373,7 +288,6 @@ export function useRoomSync(roomId: string): UseRoomSyncReturn {
     currentUser,
     isLoading,
     error,
-    updateRoom,
     joinRoom,
     leaveRoom,
     vote,
