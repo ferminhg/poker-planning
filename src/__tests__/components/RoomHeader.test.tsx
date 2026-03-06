@@ -115,8 +115,9 @@ describe('RoomHeader', () => {
   it('applies correct layout structure', () => {
     render(<RoomHeader {...defaultProps} />)
     
-    const container = screen.getByText('Room test-room-123').closest('.flex')
-    expect(container).toHaveClass('flex', 'justify-between', 'items-start', 'mb-8')
+    const titleRow = screen.getByText('Room test-room-123').closest('.flex')
+    const mainLayout = titleRow?.parentElement?.parentElement
+    expect(mainLayout).toHaveClass('flex', 'justify-between', 'items-start', 'mb-8')
   })
 
   it('handles all props together correctly', async () => {

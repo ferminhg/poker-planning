@@ -26,6 +26,12 @@ jest.mock('../HeaderActions', () => {
   };
 });
 
+jest.mock('../AnimatedEmoji', () => {
+  return function MockAnimatedEmoji({ emoji }: { emoji: string }) {
+    return <span data-testid="animated-emoji">{emoji}</span>;
+  };
+});
+
 describe('RoomHeader', () => {
   const defaultProps = {
     roomId: 'abc123',
@@ -102,8 +108,15 @@ describe('RoomHeader', () => {
   it('applies correct layout structure', () => {
     render(<RoomHeader {...defaultProps} />);
     
-    const container = screen.getByTestId('room-title').closest('div');
-    expect(container?.parentElement).toHaveClass('flex', 'justify-between', 'items-start', 'mb-8');
+    const mainLayout = screen.getByTestId('room-title').closest('div')?.parentElement?.parentElement;
+    expect(mainLayout).toHaveClass('flex', 'justify-between', 'items-start', 'mb-8');
+  });
+
+  it('renders animated emoji next to room title', () => {
+    render(<RoomHeader {...defaultProps} />);
+    
+    expect(screen.getByTestId('animated-emoji')).toBeInTheDocument();
+    expect(screen.getByTestId('animated-emoji').closest('div')).toHaveClass('flex', 'items-center', 'gap-3');
   });
 
   it('groups room info elements correctly', () => {
@@ -118,7 +131,7 @@ describe('RoomHeader', () => {
     const participantCounter = screen.getByTestId('participant-counter');
     const userInfo = screen.getByTestId('user-info');
     
-    // Both should be in the same container
+    // Both should be in the same container (below title row)
     expect(participantCounter.parentElement).toBe(userInfo.parentElement);
     expect(participantCounter.parentElement).toHaveClass('flex', 'items-center', 'gap-4');
   });
