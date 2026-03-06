@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Participant, RoomAction, RoomState } from '@/types';
 import { useAnalytics } from '@/hooks/useAnalytics';
+import { getSupabaseClient } from '@/lib/room/supabase/SupabaseClient';
 
 interface UseRoomSyncReturn {
   roomState: RoomState | null;
@@ -22,7 +23,6 @@ interface UseRoomSyncReturn {
 }
 
 const generateUserId = () => Math.random().toString(36).substring(2, 15);
-const POLLING_INTERVAL = 500; // 500ms for near real-time updates
 const MAX_PARTICIPANTS = 10;
 
 export function useRoomSync(roomId: string): UseRoomSyncReturn {
@@ -35,6 +35,7 @@ export function useRoomSync(roomId: string): UseRoomSyncReturn {
   const lastServerUpdateRef = useRef<number>(0);
   const isUpdatingRef = useRef<boolean>(false);
   const sessionStartRef = useRef<number>(Date.now());
+  const localVoteRef = useRef<string | null>(null);
   
   const analytics = useAnalytics();
 
@@ -136,6 +137,28 @@ export function useRoomSync(roomId: string): UseRoomSyncReturn {
     }
   }, [roomId, fetchRoomState]);
 
+  // Command: update own vote (CQRS - only the user can update their vote)
+  const performVoteCommand = useCallback(
+    async (userId: string, value: string) => {
+      const response = await fetch(`/api/room/${roomId}/command`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'VOTE', userId, vote: value }),
+      });
+      if (!response.ok) throw new Error('Failed to cast vote');
+      const result = await response.json();
+      if (result.state) {
+        setRoomState(result.state);
+        lastServerUpdateRef.current = result.state.lastUpdated;
+        const user = result.state.participants.find(
+          (p: Participant) => p.id === userId
+        );
+        setCurrentUser(user || null);
+      }
+    },
+    [roomId]
+  );
+
   // Join room
   const joinRoom = useCallback(async (userName: string): Promise<boolean> => {
     let userId = currentUserIdRef.current;
@@ -178,16 +201,44 @@ export function useRoomSync(roomId: string): UseRoomSyncReturn {
     localStorage.removeItem(`planningPoker_userId_${roomId}`);
   }, [roomId, performAction, analytics]);
 
-  // Vote
-  const vote = useCallback(async (value: string) => {
-    const userId = currentUserIdRef.current;
-    if (!userId) return;
+  // Vote (CQRS: uses Command endpoint, never overwritten by server Query)
+  const vote = useCallback(
+    async (value: string) => {
+      const userId = currentUserIdRef.current;
+      if (!userId) return;
 
-    await performAction({ type: 'VOTE', userId, vote: value });
-    
-    // Track vote event
-    analytics.trackVoteCast(roomId, value, roomState?.participants.length || 0);
-  }, [roomId, performAction, analytics, roomState]);
+      localVoteRef.current = value;
+
+      // Optimistic update
+      setCurrentUser((prev) =>
+        prev ? { ...prev, hasVoted: true, vote: value } : prev
+      );
+      setRoomState((prev) =>
+        prev
+          ? {
+              ...prev,
+              participants: prev.participants.map((p) =>
+                p.id === userId ? { ...p, hasVoted: true, vote: value } : p
+              ),
+            }
+          : prev
+      );
+
+      try {
+        await performVoteCommand(userId, value);
+        setError(null);
+      } catch (err) {
+        console.error('Error casting vote:', err);
+        setError(
+          err instanceof Error ? err.message : 'Failed to sync with server'
+        );
+        await fetchRoomState();
+      }
+
+      analytics.trackVoteCast(roomId, value, roomState?.participants.length || 0);
+    },
+    [roomId, performVoteCommand, fetchRoomState, analytics, roomState]
+  );
 
   // Reveal votes
   const revealVotes = useCallback(async () => {
@@ -204,9 +255,9 @@ export function useRoomSync(roomId: string): UseRoomSyncReturn {
 
   // New round
   const newRound = useCallback(async () => {
+    localVoteRef.current = null;
     await performAction({ type: 'NEW_ROUND' });
-    
-    // Track new round event
+
     analytics.trackNewRoundStarted(roomId, roomState?.participants.length || 0);
   }, [roomId, performAction, analytics, roomState]);
 
@@ -220,8 +271,9 @@ export function useRoomSync(roomId: string): UseRoomSyncReturn {
 
   // Reset votes (clear votes without revealing)
   const resetVotes = useCallback(async () => {
+    localVoteRef.current = null;
     await performAction({ type: 'NEW_ROUND' });
-    
+
     // Track reset votes event
     analytics.trackEvent('votes_reset', { 
       room_id: roomId, 
@@ -256,18 +308,86 @@ export function useRoomSync(roomId: string): UseRoomSyncReturn {
     }, 2000);
   }, [roomId, performAction, analytics, roomState]);
 
+  // Realtime subscription handler: reconcile vote for current user (anti-race-condition)
+  const handleVoteChange = useCallback(
+    async (payload: { new?: { participant_id?: string; vote_value?: string } }) => {
+      const userId = currentUserIdRef.current;
+      if (!userId || !payload.new) return;
+
+      const participantId = payload.new.participant_id;
+      const serverVote = payload.new.vote_value;
+
+      // Change is for another user: just refresh state
+      if (participantId !== userId) {
+        await fetchRoomState();
+        return;
+      }
+
+      // Change is for current user: reconcile if server differs from local
+      const localVote = localVoteRef.current;
+      if (localVote && serverVote !== localVote) {
+        await performVoteCommand(userId, localVote);
+      } else {
+        await fetchRoomState();
+      }
+    },
+    [fetchRoomState, performVoteCommand]
+  );
+
   // Initial fetch
   useEffect(() => {
     fetchRoomState();
   }, [fetchRoomState]);
 
-  // Polling for updates
+  // Supabase Realtime subscription (replaces polling)
   useEffect(() => {
     if (!roomId) return;
 
-    const interval = setInterval(fetchRoomState, POLLING_INTERVAL);
-    return () => clearInterval(interval);
-  }, [roomId, fetchRoomState]);
+    try {
+      const supabase = getSupabaseClient();
+      const channel = supabase
+        .channel(`room:${roomId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'rooms',
+            filter: `id=eq.${roomId}`,
+          },
+          () => fetchRoomState()
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'participants',
+            filter: `room_id=eq.${roomId}`,
+          },
+          () => fetchRoomState()
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'votes',
+            filter: `room_id=eq.${roomId}`,
+          },
+          handleVoteChange
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    } catch {
+      // Supabase not configured: fallback to polling
+      const interval = setInterval(fetchRoomState, 500);
+      return () => clearInterval(interval);
+    }
+  }, [roomId, fetchRoomState, handleVoteChange]);
 
   // Computed values
   const isRoomFull = roomState ? roomState.participants.length >= roomState.maxParticipants : false;

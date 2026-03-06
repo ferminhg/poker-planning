@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Participant, RoomAction, RoomState } from '@/types';
-import { roomRepository } from '@/lib/room/InMemoryRoomRepository';
+import { supabaseRoomRepository as roomRepository } from '@/lib/room/supabase/SupabaseRoomRepository';
 
 export async function GET(
   request: NextRequest,
