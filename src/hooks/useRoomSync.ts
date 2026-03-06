@@ -1,18 +1,8 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Participant, RoomAction } from '@/types';
+import { Participant, RoomAction, RoomState } from '@/types';
 import { useAnalytics } from '@/hooks/useAnalytics';
-
-interface RoomState {
-  id: string;
-  currentStory: string;
-  votesRevealed: boolean;
-  participants: Participant[];
-  maxParticipants: number;
-  lastUpdated: number;
-  createdAt: number;
-}
 
 interface UseRoomSyncReturn {
   roomState: RoomState | null;

@@ -11,6 +11,16 @@ export interface Participant {
   receivedEmojis?: (string | EmojiWithTimestamp)[];
 }
 
+export interface RoomState {
+  id: string;
+  currentStory: string;
+  votesRevealed: boolean;
+  participants: Participant[];
+  maxParticipants: number;
+  lastUpdated: number;
+  createdAt: number;
+}
+
 export type RoomAction = 
   | { type: 'JOIN'; userName: string; userId: string }
   | { type: 'LEAVE'; userId: string }

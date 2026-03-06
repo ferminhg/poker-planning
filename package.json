@@ -3,7 +3,15 @@
   "version": "0.1.0",
   "private": false,
   "description": "A modern, real-time Planning Poker application for agile teams built with Next.js",
-  "keywords": ["planning-poker", "agile", "scrum", "estimation", "nextjs", "react", "typescript"],
+  "keywords": [
+    "planning-poker",
+    "agile",
+    "scrum",
+    "estimation",
+    "nextjs",
+    "react",
+    "typescript"
+  ],
   "author": "Contributors",
   "license": "MIT",
   "repository": {
@@ -24,7 +32,6 @@
   },
   "dependencies": {
     "@vercel/analytics": "^1.6.0",
-    "@vercel/kv": "^3.0.0",
     "next": "^16.0.10",
     "react": "^19.2.3",
     "react-confetti": "^6.4.0",

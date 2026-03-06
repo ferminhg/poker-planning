@@ -1,98 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Participant, RoomAction } from '@/types';
-
-// KV availability check
-let kvAvailable: boolean | null = null;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let kvInstance: any = null;
-
-async function initializeKV() {
-  if (kvAvailable !== null) return;
-
-  try {
-    const { kv } = await import('@vercel/kv');
-    kvInstance = kv;
-
-    if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
-      kvAvailable = true;
-    } else {
-      kvAvailable = false;
-    }
-  } catch (error) {
-    kvAvailable = false;
-  }
-}
-
-// Fallback in-memory storage for development
-const memoryStore = new Map<string, RoomState>();
-
-interface RoomState {
-  id: string;
-  currentStory: string;
-  votesRevealed: boolean;
-  participants: Participant[];
-  maxParticipants: number;
-  lastUpdated: number;
-  createdAt: number;
-}
-
-const ROOM_TTL = 3600; // 1 hour
-
-// Storage abstraction layer
-async function getRoom(id: string): Promise<RoomState | null> {
-  await initializeKV();
-
-  if (kvAvailable && kvInstance) {
-    try {
-      return (await kvInstance.get(`room:${id}`)) as RoomState | null;
-    } catch (error) {
-      console.warn('KV get failed, using memory store:', error);
-      // Fall back to memory store
-    }
-  }
-
-  // Use memory store as fallback
-  return memoryStore.get(`room:${id}`) ?? null;
-}
-
-async function setRoom(id: string, data: RoomState): Promise<void> {
-  await initializeKV();
-
-  if (kvAvailable && kvInstance) {
-    try {
-      await kvInstance.set(`room:${id}`, data, { ex: ROOM_TTL });
-      return;
-    } catch (error) {
-      console.warn('KV set failed, using memory store:', error);
-      // Fall back to memory store
-    }
-  }
-
-  // Use memory store as fallback
-  memoryStore.set(`room:${id}`, data);
-
-  // Clean up memory store after TTL (simple cleanup)
-  setTimeout(() => {
-    memoryStore.delete(`room:${id}`);
-  }, ROOM_TTL * 1000);
-}
-
-async function deleteRoom(id: string): Promise<void> {
-  await initializeKV();
-
-  if (kvAvailable && kvInstance) {
-    try {
-      await kvInstance.del(`room:${id}`);
-      return;
-    } catch (error) {
-      console.warn('KV delete failed, using memory store:', error);
-      // Fall back to memory store
-    }
-  }
-
-  // Use memory store as fallback
-  memoryStore.delete(`room:${id}`);
-}
+import { Participant, RoomAction, RoomState } from '@/types';
+import { roomRepository } from '@/lib/room/InMemoryRoomRepository';
 
 export async function GET(
   request: NextRequest,
@@ -100,7 +8,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const roomData = await getRoom(id);
+    const roomData = await roomRepository.get(id);
 
     return NextResponse.json(roomData || null, { status: roomData ? 200 : 404 });
   } catch (error) {
@@ -141,7 +49,7 @@ export async function POST(
     }
 
     // Save to storage
-    await setRoom(id, validatedState);
+    await roomRepository.set(id, validatedState);
 
     return NextResponse.json({ success: true, state: validatedState });
   } catch (error) {
@@ -159,7 +67,7 @@ export async function PATCH(
     const action: RoomAction = await request.json();
     
     // Get current state
-    let roomState = await getRoom(id);
+    let roomState = await roomRepository.get(id);
     
     // If room doesn't exist and it's not a JOIN action, return error
     if (!roomState && action.type !== 'JOIN') {
@@ -271,7 +179,7 @@ export async function PATCH(
     }
 
     // Save back to storage
-    await setRoom(id, newState);
+    await roomRepository.set(id, newState);
 
     return NextResponse.json({ success: true, state: newState });
   } catch (error) {
@@ -286,7 +194,7 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    await deleteRoom(id);
+    await roomRepository.delete(id);
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error deleting room:', error);
