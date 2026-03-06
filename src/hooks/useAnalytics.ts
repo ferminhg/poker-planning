@@ -39,12 +39,6 @@ interface AnalyticsEvents {
     participant_count: number;
   };
 
-  // Story events
-  story_updated: {
-    room_id: string;
-    story_length: number;
-  };
-
   // User events
   user_name_changed: {
     room_id: string;
@@ -122,13 +116,6 @@ export function useAnalytics() {
     });
   };
 
-  const trackStoryUpdated = (roomId: string, storyLength: number) => {
-    trackEvent('story_updated', { 
-      room_id: roomId, 
-      story_length: storyLength 
-    });
-  };
-
   const trackUserNameChanged = (roomId: string) => {
     trackEvent('user_name_changed', { room_id: roomId });
   };
@@ -142,7 +129,6 @@ export function useAnalytics() {
     trackVoteCast,
     trackVotesRevealed,
     trackNewRoundStarted,
-    trackStoryUpdated,
     trackUserNameChanged,
   };
 }

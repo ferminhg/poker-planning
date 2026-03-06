@@ -35,7 +35,6 @@ export async function POST(
     // Ensure required fields
     const validatedState: RoomState = {
       id,
-      currentStory: roomState.currentStory || '',
       votesRevealed: Boolean(roomState.votesRevealed),
       participants: Array.isArray(roomState.participants) ? roomState.participants : [],
       maxParticipants: roomState.maxParticipants || MAX_PARTICIPANTS,
@@ -78,7 +77,6 @@ export async function PATCH(
     if (!roomState) {
       roomState = {
         id,
-        currentStory: '',
         votesRevealed: false,
         participants: [],
         maxParticipants: MAX_PARTICIPANTS,
@@ -136,10 +134,6 @@ export async function PATCH(
           hasVoted: false,
           vote: undefined
         }));
-        break;
-      }
-      case 'UPDATE_STORY': {
-        newState.currentStory = action.story;
         break;
       }
       case 'SEND_EMOJI': {

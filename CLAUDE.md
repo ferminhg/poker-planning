@@ -71,7 +71,6 @@ npm run lint
   - `vote_cast`: When a user votes (includes vote value)
   - `votes_revealed`: When votes are revealed (includes all vote values)
   - `new_round_started`: When a new voting round begins
-  - `story_updated`: When the current story is changed
   - `user_name_changed`: When a user changes their name
 
 ## Storage Fallback System

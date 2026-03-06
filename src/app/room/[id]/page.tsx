@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import Footer from '@/components/Footer';
 import RoomHeader from '@/components/RoomHeader';
-import StoryInput from '@/components/StoryInput';
 import ParticipantsList from '@/components/ParticipantsList';
 import VotingDeck from '@/components/VotingDeck';
 import VotingControls from '@/components/VotingControls';
@@ -63,7 +62,6 @@ export default function RoomPage({ params }: { params: Promise<{ id: string }> }
     vote,
     revealVotes,
     newRound,
-    updateStory,
     resetVotes,
     sendEmoji,
     isRoomFull,
@@ -289,11 +287,6 @@ export default function RoomPage({ params }: { params: Promise<{ id: string }> }
         />
 
         <div className="max-w-4xl mx-auto space-y-6">
-        
-        <StoryInput 
-          value={roomState?.currentStory || ''}
-          onChange={updateStory}
-        />
 
         <ParticipantsList 
           participants={roomState?.participants || []}

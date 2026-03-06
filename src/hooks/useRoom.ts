@@ -5,7 +5,6 @@ import { Participant } from '@/types';
 
 interface RoomState {
   id: string;
-  currentStory: string;
   votesRevealed: boolean;
   participants: Participant[];
   maxParticipants: number;
@@ -15,7 +14,6 @@ interface RoomState {
 interface UseRoomReturn {
   roomState: RoomState;
   currentUser: Participant | null;
-  updateStory: (story: string) => void;
   joinRoom: (userName: string) => boolean;
   leaveRoom: () => void;
   vote: (value: string) => void;
@@ -37,7 +35,6 @@ export function useRoom(roomId: string): UseRoomReturn {
   
   const [roomState, setRoomState] = useState<RoomState>({
     id: roomId,
-    currentStory: '',
     votesRevealed: false,
     participants: [],
     maxParticipants: MAX_PARTICIPANTS,
@@ -199,14 +196,6 @@ export function useRoom(roomId: string): UseRoomReturn {
     localStorage.removeItem(getUserIdKey(roomId));
   };
 
-  const updateStory = (story: string) => {
-    const newRoomState = {
-      ...roomState,
-      currentStory: story
-    };
-    saveRoomState(newRoomState);
-  };
-
   const vote = (value: string) => {
     const userId = currentUserIdRef.current;
     if (!userId) return;
@@ -256,7 +245,6 @@ export function useRoom(roomId: string): UseRoomReturn {
   return {
     roomState,
     currentUser,
-    updateStory,
     joinRoom,
     leaveRoom,
     vote,

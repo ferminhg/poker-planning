@@ -13,7 +13,6 @@ export interface Participant {
 
 export interface RoomState {
   id: string;
-  currentStory: string;
   votesRevealed: boolean;
   participants: Participant[];
   maxParticipants: number;
@@ -27,6 +26,5 @@ export type RoomAction =
   | { type: 'VOTE'; userId: string; vote: string }
   | { type: 'REVEAL' }
   | { type: 'NEW_ROUND' }
-  | { type: 'UPDATE_STORY'; story: string }
   | { type: 'SEND_EMOJI'; targetUserId: string; emoji: string; timestamp: number }
   | { type: 'REMOVE_EMOJI'; targetUserId: string; timestamp: number };

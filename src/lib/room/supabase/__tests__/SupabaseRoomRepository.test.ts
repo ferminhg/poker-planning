@@ -10,7 +10,6 @@ jest.mock('../SupabaseClientServer', () => ({
 
 const baseRoom: RoomState = {
   id: 'room-1',
-  currentStory: 'Story 1',
   votesRevealed: false,
   participants: [{ id: 'user-1', name: 'Alice', hasVoted: true, vote: '5' }],
   maxParticipants: 10,

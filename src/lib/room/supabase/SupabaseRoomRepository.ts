@@ -54,7 +54,6 @@ export class SupabaseRoomRepository implements RoomRepository {
 
     return {
       id: roomRow.id,
-      currentStory: roomRow.current_story,
       votesRevealed: roomRow.votes_revealed,
       maxParticipants: roomRow.max_participants,
       participants,
@@ -66,7 +65,7 @@ export class SupabaseRoomRepository implements RoomRepository {
   async set(id: string, room: RoomState): Promise<void> {
     const { error: roomError } = await this.client.from('rooms').upsert({
       id,
-      current_story: room.currentStory,
+      current_story: '',
       votes_revealed: room.votesRevealed,
       max_participants: room.maxParticipants,
       updated_at: new Date(room.lastUpdated).toISOString(),

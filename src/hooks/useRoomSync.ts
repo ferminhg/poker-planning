@@ -15,7 +15,6 @@ interface UseRoomSyncReturn {
   vote: (value: string) => Promise<void>;
   revealVotes: () => Promise<void>;
   newRound: () => Promise<void>;
-  updateStory: (story: string) => Promise<void>;
   resetVotes: () => Promise<void>;
   sendEmoji: (targetUserId: string, emoji: string) => Promise<void>;
   isRoomFull: boolean;
@@ -60,7 +59,6 @@ export function useRoomSync(roomId: string): UseRoomSyncReturn {
         // Room doesn't exist, create default state
         setRoomState({
           id: roomId,
-          currentStory: '',
           votesRevealed: false,
           participants: [],
           maxParticipants: MAX_PARTICIPANTS,
@@ -261,14 +259,6 @@ export function useRoomSync(roomId: string): UseRoomSyncReturn {
     analytics.trackNewRoundStarted(roomId, roomState?.participants.length || 0);
   }, [roomId, performAction, analytics, roomState]);
 
-  // Update story
-  const updateStory = useCallback(async (story: string) => {
-    await performAction({ type: 'UPDATE_STORY', story });
-    
-    // Track story update event
-    analytics.trackStoryUpdated(roomId, story.length);
-  }, [roomId, performAction, analytics]);
-
   // Reset votes (clear votes without revealing)
   const resetVotes = useCallback(async () => {
     localVoteRef.current = null;
@@ -403,7 +393,6 @@ export function useRoomSync(roomId: string): UseRoomSyncReturn {
     vote,
     revealVotes,
     newRound,
-    updateStory,
     resetVotes,
     sendEmoji,
     isRoomFull,

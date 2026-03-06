@@ -30,7 +30,7 @@ export default function VotingDeck({ onVote, disabled, resetSelection }: VotingD
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-4">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4 text-center">
+      <h3 className="text-xl font-semibold text-gray-900 mb-4 text-center">
         Choose your estimate
       </h3>
       
